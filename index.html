@@ -83,6 +83,83 @@
         </div>
     </header>
 
+    <!-- Menu Lateral (Drawer) -->
+    <div id="sidebarOverlay" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden transition-opacity"></div>
+    <aside id="sidebar" class="fixed top-0 left-0 bottom-0 w-72 bg-[#18181b] border-r border-gray-800 z-50 transform -translate-x-full transition-transform duration-300 flex flex-col shadow-2xl">
+        <div class="p-5 border-b border-gray-800 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-full bg-indigo-600/20 text-indigo-400 flex items-center justify-center font-bold text-lg">
+                    <i class="fa-solid fa-wallet"></i>
+                </div>
+                <div>
+                    <h2 class="font-bold text-white text-sm">Finanças PWA</h2>
+                    <p class="text-xs text-gray-400">Controle de Agenda</p>
+                </div>
+            </div>
+            <button id="closeSidebarBtn" class="text-gray-400 hover:text-white p-2">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+        </div>
+
+        <div class="p-4 flex-1 space-y-2">
+            <button id="menuReportsBtn" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-300 hover:bg-gray-800 hover:text-white transition-colors text-sm font-medium">
+                <i class="fa-solid fa-chart-pie text-indigo-400 w-5"></i>
+                <span>Relatórios Financeiros</span>
+            </button>
+        </div>
+
+        <div class="p-4 border-t border-gray-800 text-xs text-center text-gray-500">
+            Agenda Financeira v1.0
+        </div>
+    </aside>
+
+    <!-- Modal de Relatórios -->
+    <div id="reportsModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-cardBg border border-gray-800 rounded-2xl w-full max-w-md p-6 shadow-2xl relative animate-in fade-in zoom-in duration-200">
+            <div class="flex justify-between items-center mb-5 border-b border-gray-800 pb-3">
+                <h2 class="text-lg font-bold text-white flex items-center space-x-2">
+                    <i class="fa-solid fa-chart-pie text-indigo-400"></i>
+                    <span>Relatório do Mês</span>
+                </h2>
+                <button id="closeReportsBtn" class="text-gray-400 hover:text-white p-1">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <div class="space-y-4">
+                <div class="bg-[#121212] border border-gray-800 rounded-xl p-4 flex items-center justify-between">
+                    <div>
+                        <p class="text-xs text-gray-400 font-medium uppercase">Total Pago</p>
+                        <p id="reportPaid" class="text-xl font-bold text-emerald-500 mt-1">R$ 0,00</p>
+                    </div>
+                    <div class="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center">
+                        <i class="fa-solid fa-check text-lg"></i>
+                    </div>
+                </div>
+
+                <div class="bg-[#121212] border border-gray-800 rounded-xl p-4 flex items-center justify-between">
+                    <div>
+                        <p class="text-xs text-gray-400 font-medium uppercase">Total Pendente</p>
+                        <p id="reportPending" class="text-xl font-bold text-amber-500 mt-1">R$ 0,00</p>
+                    </div>
+                    <div class="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center">
+                        <i class="fa-solid fa-clock text-lg"></i>
+                    </div>
+                </div>
+
+                <div class="bg-[#121212] border border-gray-800 rounded-xl p-4 flex items-center justify-between border-t-2 border-t-indigo-500">
+                    <div>
+                        <p class="text-xs text-gray-400 font-medium uppercase">Total Geral do Mês</p>
+                        <p id="reportTotal" class="text-xl font-bold text-white mt-1">R$ 0,00</p>
+                    </div>
+                    <div class="w-10 h-10 rounded-xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center">
+                        <i class="fa-solid fa-wallet text-lg"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Dropdown / Modal de Seleção de Meses -->
     <div id="monthPickerDropdown" class="absolute top-16 left-4 bg-cardBg border border-gray-700 rounded-2xl shadow-2xl p-4 z-40 hidden w-72 animate-in fade-in zoom-in duration-200">
         <div class="flex items-center justify-between mb-4 pb-2 border-b border-gray-800">
@@ -204,6 +281,15 @@
         const pickerYearLabel = document.getElementById('pickerYearLabel');
         const monthsGrid = document.getElementById('monthsGrid');
 
+        // Elementos do Menu e Relatórios
+        const menuBtn = document.getElementById('menuBtn');
+        const sidebar = document.getElementById('sidebar');
+        const sidebarOverlay = document.getElementById('sidebarOverlay');
+        const closeSidebarBtn = document.getElementById('closeSidebarBtn');
+        const menuReportsBtn = document.getElementById('menuReportsBtn');
+        const reportsModal = document.getElementById('reportsModal');
+        const closeReportsBtn = document.getElementById('closeReportsBtn');
+
         document.addEventListener('DOMContentLoaded', async () => {
             await seedInitialDataIfNeeded();
             renderCalendar();
@@ -301,6 +387,64 @@
             calendarGrid.innerHTML = cellsHTML;
         }
 
+        // Lógica do Menu Lateral (Drawer)
+        function toggleSidebar() {
+            const isOpen = !sidebar.classList.contains('-translate-x-full');
+            if (isOpen) {
+                sidebar.classList.add('-translate-x-full');
+                sidebarOverlay.classList.add('hidden');
+            } else {
+                sidebar.classList.remove('-translate-x-full');
+                sidebarOverlay.classList.remove('hidden');
+            }
+        }
+
+        menuBtn.addEventListener('click', toggleSidebar);
+        closeSidebarBtn.addEventListener('click', toggleSidebar);
+        sidebarOverlay.addEventListener('click', toggleSidebar);
+
+        // Lógica de Relatórios
+        async function openReports() {
+            toggleSidebar();
+            
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth();
+            const totalDays = new Date(year, month + 1, 0).getDate();
+
+            const startDateStr = `${year}-${String(month + 1).padStart(2, '0')}-01`;
+            const endDateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(totalDays).padStart(2, '0')}`;
+            
+            const transactions = await db.transactions
+                .where('date')
+                .between(startDateStr, endDateStr + '\uffff', true, true)
+                .toArray();
+
+            let paidSum = 0;
+            let pendingSum = 0;
+
+            transactions.forEach(tx => {
+                const amount = parseFloat(tx.amount) || 0;
+                if (tx.status === 'paid') {
+                    paidSum += amount;
+                } else {
+                    pendingSum += amount;
+                }
+            });
+
+            const totalSum = paidSum + pendingSum;
+
+            document.getElementById('reportPaid').textContent = `R$ ${paidSum.toFixed(2)}`;
+            document.getElementById('reportPending').textContent = `R$ ${pendingSum.toFixed(2)}`;
+            document.getElementById('reportTotal').textContent = `R$ ${totalSum.toFixed(2)}`;
+
+            reportsModal.classList.remove('hidden');
+        }
+
+        menuReportsBtn.addEventListener('click', openReports);
+        closeReportsBtn.addEventListener('click', () => {
+            reportsModal.classList.add('hidden');
+        });
+
         // Lógica do Seletor de Meses
         function renderMonthPicker() {
             pickerYearLabel.textContent = pickerYear;
@@ -347,14 +491,13 @@
             renderMonthPicker();
         });
 
-        // Fechar dropdown ao clicar fora
         document.addEventListener('click', (e) => {
             if (!monthPickerDropdown.contains(e.target) && !monthSelectorBtn.contains(e.target)) {
                 monthPickerDropdown.classList.add('hidden');
             }
         });
 
-        // Controle do Modal
+        // Controle do Modal de Contas
         function openAddModalForDate(day) {
             const year = currentDate.getFullYear();
             const month = String(currentDate.getMonth() + 1).padStart(2, '0');
