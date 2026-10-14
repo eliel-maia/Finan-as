@@ -61,7 +61,7 @@
         }
     </style>
 </head>
-<body class="bg-darkBg text-gray-100 min-h-screen flex flex-col font-sans select-none relative">
+<body class="bg-darkBg text-gray-100 min-h-screen flex flex-col font-sans select-none relative overflow-hidden">
 
     <!-- Header -->
     <header class="bg-[#18181b] border-b border-gray-800 px-4 py-3 flex items-center justify-between sticky top-0 z-20">
@@ -183,8 +183,8 @@
         <div>sáb.</div>
     </div>
 
-    <!-- Main Calendar Grid Container -->
-    <main class="flex-1 overflow-y-auto pb-24">
+    <!-- Main Calendar Grid Container (Com Suporte a Swipe / Arrastar) -->
+    <main id="swipeContainer" class="flex-1 overflow-y-auto pb-24 touch-pan-y">
         <div id="calendarGrid" class="grid grid-cols-7 auto-rows-fr min-h-[calc(100vh-120px)] border-l border-gray-800">
             <!-- Gerado via JavaScript -->
         </div>
@@ -241,7 +241,7 @@
                     </div>
                 </div>
 
-                <!-- Seção de Recorrência (Parcelas / Fixo) -->
+                <!-- Seção de Recorrência -->
                 <div id="recurrenceSection" class="bg-[#121212] border border-gray-800 rounded-xl p-4 space-y-3">
                     <label class="block text-xs font-semibold text-gray-400 uppercase">Repetição / Recorrência</label>
                     <div class="grid grid-cols-2 gap-3">
@@ -330,8 +330,40 @@
         document.addEventListener('DOMContentLoaded', async () => {
             await seedInitialDataIfNeeded();
             renderCalendar();
+            setupSwipeGestures();
             registerServiceWorker();
         });
+
+        // Configuração de Gestos de Arrastar (Swipe Left / Swipe Right)
+        function setupSwipeGestures() {
+            const swipeContainer = document.getElementById('swipeContainer');
+            let touchStartX = 0;
+            let touchEndX = 0;
+            const minSwipeDistance = 50; // Distância mínima em pixels para considerar o gesto
+
+            swipeContainer.addEventListener('touchstart', (e) => {
+                touchStartX = e.changedTouches[0].screenX;
+            }, { passive: true });
+
+            swipeContainer.addEventListener('touchend', (e) => {
+                touchEndX = e.changedTouches[0].screenX;
+                handleSwipe();
+            }, { passive: true });
+
+            function handleSwipe() {
+                const distance = touchEndX - touchStartX;
+                if (Math.abs(distance) < minSwipeDistance) return;
+
+                if (distance > 0) {
+                    // Arrastou para a direita -> Mês anterior
+                    currentDate.setMonth(currentDate.getMonth() - 1);
+                } else {
+                    // Arrastou para a esquerda -> Próximo mês
+                    currentDate.setMonth(currentDate.getMonth() + 1);
+                }
+                renderCalendar();
+            }
+        }
 
         async function seedInitialDataIfNeeded() {
             const count = await db.transactions.count();
@@ -546,7 +578,6 @@
             document.getElementById('dateInput').value = `${year}-${month}-${dayStr}`;
             document.querySelector('input[name="status"][value="pending"]').checked = true;
             
-            // Ocultar campo de ID / Exibir seção de recorrência para novos cadastros
             recurrenceSection.classList.remove('hidden');
             document.querySelector('input[name="recurrenceType"][value="single"]').checked = true;
             installmentsContainer.classList.add('hidden');
@@ -588,7 +619,6 @@
             document.getElementById('dateInput').value = tx.date;
             document.querySelector(`input[name="status"][value="${tx.status}"]`).checked = true;
 
-            // Na edição, ocultamos a recorrência para focar apenas na alteração daquele registro específico
             recurrenceSection.classList.add('hidden');
 
             modalTitle.textContent = 'Editar Conta';
@@ -596,7 +626,6 @@
             transactionModal.classList.remove('hidden');
         };
 
-        // Salvar Transação com Suporte a Recorrência (Múltiplos Meses)
         transactionForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const id = document.getElementById('transactionId').value;
@@ -606,7 +635,6 @@
             const status = document.querySelector('input[name="status"]:checked').value;
 
             if (id) {
-                // Atualizar apenas o item existente
                 await db.transactions.update(parseInt(id), { name, amount, date: baseDateStr, status });
             } else {
                 const recurrenceType = document.querySelector('input[name="recurrenceType"]:checked').value;
@@ -625,13 +653,10 @@
                             targetYear += 1;
                         }
 
-                        // Ajuste seguro para dias que não existem em alguns meses (ex: dia 31)
                         const lastDayOfTargetMonth = new Date(targetYear, targetMonth, 0).getDate();
                         const targetDay = Math.min(baseDay, lastDayOfTargetMonth);
 
                         const formattedDate = `${targetYear}-${String(targetMonth).padStart(2, '0')}-${String(targetDay).padStart(2, '0')}`;
-                        
-                        // O primeiro mês mantém o status escolhido, os seguintes entram como pendentes por segurança (ou você pode ajustar)
                         const itemStatus = (i === 0) ? status : 'pending';
 
                         newTransactions.push({
@@ -643,7 +668,6 @@
                     }
                     await db.transactions.bulkAdd(newTransactions);
                 } else {
-                    // Apenas 1 registro
                     await db.transactions.add({ name, amount, date: baseDateStr, status });
                 }
             }
