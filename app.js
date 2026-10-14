@@ -138,7 +138,7 @@ async function renderCalendar() {
     for (let i = firstDayIndex; i > 0; i--) {
         const dayNum = prevTotalDays - i + 1;
         cellsHTML += `
-            <div class="border-b border-r border-gray-800/60 p-1 min-h-[95px] bg-[#121212]/40 opacity-40">
+            <div class="border-b border-r border-gray-800/60 p-0.5 min-h-[95px] bg-[#121212]/40 opacity-40">
                 <span class="text-xs text-gray-500 font-semibold px-1">${dayNum}</span>
             </div>
         `;
@@ -153,18 +153,18 @@ async function renderCalendar() {
         dayTxs.forEach(tx => {
             const bgClass = tx.status === 'paid' ? 'bg-paidGreen/90 text-white' : 'bg-pendingOrange/90 text-white';
             txBadges += `
-                <div onclick="openEditModal(${tx.id})" class="${bgClass} text-[10px] font-medium px-1 py-0.5 rounded mb-0.5 truncate cursor-pointer shadow-sm hover:opacity-80 transition-opacity flex items-center justify-between leading-tight">
-                    <span class="truncate">${tx.name}</span>
+                <div onclick="openEditModal(${tx.id})" class="${bgClass} w-full text-[10px] font-medium px-0.5 py-0.5 rounded-sm mb-0.5 cursor-pointer shadow-sm hover:opacity-80 transition-opacity flex items-center justify-between leading-tight overflow-hidden">
+                    <span class="truncate w-full text-left">${tx.name}</span>
                 </div>
             `;
         });
 
         cellsHTML += `
-            <div onclick="openAddModalForDate(${day})" class="border-b border-r border-gray-800 p-1 min-h-[100px] bg-darkBg hover:bg-[#1a1a1a] transition-colors cursor-pointer flex flex-col">
-                <div class="flex items-center justify-between mb-0.5">
-                    <span class="text-xs font-bold px-1.5 py-0.2 rounded-full ${isToday ? 'bg-blue-600 text-white' : 'text-gray-400'}">${day}</span>
+            <div onclick="openAddModalForDate(${day})" class="border-b border-r border-gray-800 p-0.5 min-h-[100px] bg-darkBg hover:bg-[#1a1a1a] transition-colors cursor-pointer flex flex-col">
+                <div class="flex items-center justify-between mb-0.5 px-0.5">
+                    <span class="text-xs font-bold px-1 py-0.2 rounded-full ${isToday ? 'bg-blue-600 text-white' : 'text-gray-400'}">${day}</span>
                 </div>
-                <div class="flex-1 overflow-y-auto space-y-0.5">
+                <div class="flex-1 overflow-y-auto space-y-0.5 w-full">
                     ${txBadges}
                 </div>
             </div>
