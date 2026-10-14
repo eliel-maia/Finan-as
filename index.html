@@ -92,11 +92,11 @@
         </div>
 
         <div class="p-4 border-t border-gray-800 text-xs text-center text-gray-500">
-            Agenda Financeira v1.3
+            Agenda Financeira v1.4
         </div>
     </aside>
 
-    <!-- Modal de Relatórios com Categoria -->
+    <!-- Modal de Relatórios -->
     <div id="reportsModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
         <div class="bg-cardBg border border-gray-800 rounded-2xl w-full max-w-md p-6 shadow-2xl relative animate-in fade-in zoom-in duration-200 max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-center mb-5 border-b border-gray-800 pb-3">
@@ -197,7 +197,7 @@
                 
                 <div>
                     <label class="block text-xs font-semibold text-gray-400 uppercase mb-1">Nome da Conta / Despesa</label>
-                    <input type="text" id="nameInput" required placeholder="Ex: Nubank, Aluguel, Academia" 
+                    <input type="text" id="nameInput" required placeholder="Ex: Aluguel, Supermercado" 
                         class="w-full bg-[#121212] border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500 text-sm">
                 </div>
 
@@ -217,13 +217,25 @@
                 <div>
                     <label class="block text-xs font-semibold text-gray-400 uppercase mb-1">Categoria</label>
                     <select id="categoryInput" class="w-full bg-[#121212] border border-gray-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500 text-sm">
-                        <option value="Outros">Outros</option>
-                        <option value="Moradia">Moradia / Contas</option>
                         <option value="Alimentação">Alimentação</option>
-                        <option value="Transporte">Transporte / Cartão</option>
-                        <option value="Saúde">Saúde</option>
-                        <option value="Lazer">Lazer / Assinaturas</option>
+                        <option value="Aluguel">Aluguel</option>
+                        <option value="Cartão de Crédito">Cartão de Crédito</option>
+                        <option value="Comunicação">Comunicação</option>
+                        <option value="Dívida">Dívida</option>
+                        <option value="Dízimo">Dízimo</option>
                         <option value="Educação">Educação</option>
+                        <option value="Empréstimo">Empréstimo</option>
+                        <option value="Entretenimento">Entretenimento</option>
+                        <option value="Financiamento">Financiamento</option>
+                        <option value="Internet">Internet</option>
+                        <option value="Investimento">Investimento</option>
+                        <option value="Lazer">Lazer</option>
+                        <option value="Moradia">Moradia</option>
+                        <option value="Outros" selected>Outros</option>
+                        <option value="Salário">Salário</option>
+                        <option value="Saúde">Saúde</option>
+                        <option value="Transporte">Transporte</option>
+                        <option value="Veículo">Veículo</option>
                     </select>
                 </div>
 
