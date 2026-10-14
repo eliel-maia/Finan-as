@@ -28,7 +28,7 @@ const categoryColors = {
 };
 
 function getCategoryColor(category) {
-    return categoryColors[category] || "#6b7280"; // Cinza padrão se não encontrar
+    return categoryColors[category] || "#6b7280";
 }
 
 const calendarGrid = document.getElementById('calendarGrid');
@@ -75,7 +75,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     registerServiceWorker();
 });
 
-// Função para tratar valores monetários com vírgula e ponto corretamente
 function parseCurrency(valueStr) {
     if (!valueStr) return 0;
     let clean = String(valueStr).trim();
@@ -263,22 +262,33 @@ async function openReports() {
         .toArray();
 
     let totalSum = 0;
+    let paidSum = 0;
+    let pendingSum = 0;
     const catTotals = {};
 
     transactions.forEach(tx => {
         const amount = parseFloat(tx.amount) || 0;
         const cat = tx.category || 'Outros';
         totalSum += amount;
+
+        if (tx.status === 'paid') {
+            paidSum += amount;
+        } else {
+            pendingSum += amount;
+        }
+
         catTotals[cat] = (catTotals[cat] || 0) + amount;
     });
 
+    // Atualizar valores nos cards e no centro do gráfico
+    document.getElementById('reportPaid').textContent = `R$ ${paidSum.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    document.getElementById('reportPending').textContent = `R$ ${pendingSum.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     document.getElementById('reportTotal').textContent = `R$ ${totalSum.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
     const categorySummaryList = document.getElementById('categorySummaryList');
     categorySummaryList.innerHTML = '';
 
     const categories = Object.keys(catTotals).sort((a, b) => catTotals[b] - catTotals[a]);
-
     const donutChart = document.getElementById('donutChart');
 
     if (categories.length === 0) {
