@@ -106,10 +106,19 @@
                 <i class="fa-solid fa-chart-pie text-indigo-400 w-5"></i>
                 <span>Relatórios Financeiros</span>
             </button>
+            <button id="menuExportBtn" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-300 hover:bg-gray-800 hover:text-white transition-colors text-sm font-medium">
+                <i class="fa-solid fa-file-arrow-down text-emerald-400 w-5"></i>
+                <span>Exportar Backup (JSON)</span>
+            </button>
+            <label class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-300 hover:bg-gray-800 hover:text-white transition-colors text-sm font-medium cursor-pointer">
+                <i class="fa-solid fa-file-arrow-up text-amber-400 w-5"></i>
+                <span>Restaurar Backup</span>
+                <input type="file" id="importFile" accept=".json" class="hidden">
+            </label>
         </div>
 
         <div class="p-4 border-t border-gray-800 text-xs text-center text-gray-500">
-            Agenda Financeira v1.0
+            Agenda Financeira v1.1
         </div>
     </aside>
 
@@ -183,7 +192,7 @@
         <div>sáb.</div>
     </div>
 
-    <!-- Main Calendar Grid Container (Com Suporte a Swipe / Arrastar) -->
+    <!-- Main Calendar Grid Container -->
     <main id="swipeContainer" class="flex-1 overflow-y-auto pb-24 touch-pan-y">
         <div id="calendarGrid" class="grid grid-cols-7 auto-rows-fr min-h-[calc(100vh-120px)] border-l border-gray-800">
             <!-- Gerado via JavaScript -->
@@ -303,7 +312,7 @@
         const pickerYearLabel = document.getElementById('pickerYearLabel');
         const monthsGrid = document.getElementById('monthsGrid');
 
-        // Elementos do Menu e Relatórios
+        // Elementos do Menu, Relatórios e Backup
         const menuBtn = document.getElementById('menuBtn');
         const sidebar = document.getElementById('sidebar');
         const sidebarOverlay = document.getElementById('sidebarOverlay');
@@ -311,6 +320,8 @@
         const menuReportsBtn = document.getElementById('menuReportsBtn');
         const reportsModal = document.getElementById('reportsModal');
         const closeReportsBtn = document.getElementById('closeReportsBtn');
+        const menuExportBtn = document.getElementById('menuExportBtn');
+        const importFile = document.getElementById('importFile');
 
         // Elementos de Recorrência
         const recurrenceSection = document.getElementById('recurrenceSection');
@@ -334,12 +345,12 @@
             registerServiceWorker();
         });
 
-        // Configuração de Gestos de Arrastar (Swipe Left / Swipe Right)
+        // Configuração de Gestos de Arrastar (Swipe)
         function setupSwipeGestures() {
             const swipeContainer = document.getElementById('swipeContainer');
             let touchStartX = 0;
             let touchEndX = 0;
-            const minSwipeDistance = 50; // Distância mínima em pixels para considerar o gesto
+            const minSwipeDistance = 50;
 
             swipeContainer.addEventListener('touchstart', (e) => {
                 touchStartX = e.changedTouches[0].screenX;
@@ -355,10 +366,8 @@
                 if (Math.abs(distance) < minSwipeDistance) return;
 
                 if (distance > 0) {
-                    // Arrastou para a direita -> Mês anterior
                     currentDate.setMonth(currentDate.getMonth() - 1);
                 } else {
-                    // Arrastou para a esquerda -> Próximo mês
                     currentDate.setMonth(currentDate.getMonth() + 1);
                 }
                 renderCalendar();
@@ -512,6 +521,49 @@
         menuReportsBtn.addEventListener('click', openReports);
         closeReportsBtn.addEventListener('click', () => {
             reportsModal.classList.add('hidden');
+        });
+
+        // Lógica de Exportar Backup (JSON)
+        menuExportBtn.addEventListener('click', async () => {
+            toggleSidebar();
+            const allTransactions = await db.transactions.toArray();
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(allTransactions, null, 2));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", `backup_financas_${new Date().toISOString().split('T')[0]}.json`);
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+        });
+
+        // Lógica de Restaurar Backup (JSON)
+        importFile.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = async function(event) {
+                try {
+                    const importedData = JSON.parse(event.target.result);
+                    if (Array.isArray(importedData)) {
+                        if (confirm(`Deseja importar ${importedData.length} registros? Isso substituirá ou mesclará com seus dados atuais.`)) {
+                            // Limpa os IDs antigos para evitar conflitos no Dexie
+                            const cleanData = importedData.map(({ id, ...rest }) => rest);
+                            await db.transactions.bulkAdd(cleanData);
+                            alert('Backup restaurado com sucesso!');
+                            renderCalendar();
+                        }
+                    } else {
+                        alert('Arquivo de backup inválido.');
+                    }
+                } catch (err) {
+                    alert('Erro ao ler o arquivo JSON.');
+                    console.error(err);
+                }
+                toggleSidebar();
+                importFile.value = '';
+            };
+            reader.readAsText(file);
         });
 
         // Lógica do Seletor de Meses
