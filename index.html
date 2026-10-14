@@ -83,16 +83,16 @@
         </div>
     </header>
 
-    <!-- Menu Lateral (Drawer) -->
+    <!-- Menu Lateral (Drawer) com Alinhamento e Fonte Ajustados -->
     <div id="sidebarOverlay" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden transition-opacity"></div>
-    <aside id="sidebar" class="fixed top-0 left-0 bottom-0 w-72 bg-[#18181b] border-r border-gray-800 z-50 transform -translate-x-full transition-transform duration-300 flex flex-col shadow-2xl">
+    <aside id="sidebar" class="fixed top-0 left-0 bottom-0 w-80 bg-[#18181b] border-r border-gray-800 z-50 transform -translate-x-full transition-transform duration-300 flex flex-col shadow-2xl">
         <div class="p-5 border-b border-gray-800 flex items-center justify-between">
             <div class="flex items-center space-x-3">
                 <div class="w-10 h-10 rounded-full bg-indigo-600/20 text-indigo-400 flex items-center justify-center font-bold text-lg">
                     <i class="fa-solid fa-wallet"></i>
                 </div>
                 <div>
-                    <h2 class="font-bold text-white text-sm">Finanças PWA</h2>
+                    <h2 class="font-bold text-white text-base">Finanças PWA</h2>
                     <p class="text-xs text-gray-400">Controle de Agenda</p>
                 </div>
             </div>
@@ -101,24 +101,24 @@
             </button>
         </div>
 
-        <div class="p-4 flex-1 space-y-2">
-            <button id="menuReportsBtn" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-300 hover:bg-gray-800 hover:text-white transition-colors text-sm font-medium">
-                <i class="fa-solid fa-chart-pie text-indigo-400 w-5"></i>
-                <span>Relatórios Financeiros</span>
+        <div class="p-4 flex-1 space-y-3">
+            <button id="menuReportsBtn" class="w-full flex items-center space-x-4 px-4 py-3.5 rounded-xl text-gray-200 hover:bg-gray-800 hover:text-white transition-colors text-base font-medium">
+                <i class="fa-solid fa-chart-pie text-indigo-400 w-6 text-center text-lg"></i>
+                <span class="text-left flex-1">Relatórios Financeiros</span>
             </button>
-            <button id="menuExportBtn" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-300 hover:bg-gray-800 hover:text-white transition-colors text-sm font-medium">
-                <i class="fa-solid fa-file-arrow-down text-emerald-400 w-5"></i>
-                <span>Exportar Backup (JSON)</span>
+            <button id="menuExportBtn" class="w-full flex items-center space-x-4 px-4 py-3.5 rounded-xl text-gray-200 hover:bg-gray-800 hover:text-white transition-colors text-base font-medium">
+                <i class="fa-solid fa-file-arrow-down text-emerald-400 w-6 text-center text-lg"></i>
+                <span class="text-left flex-1">Exportar Backup (JSON)</span>
             </button>
-            <label class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-300 hover:bg-gray-800 hover:text-white transition-colors text-sm font-medium cursor-pointer">
-                <i class="fa-solid fa-file-arrow-up text-amber-400 w-5"></i>
-                <span>Restaurar Backup</span>
+            <label class="w-full flex items-center space-x-4 px-4 py-3.5 rounded-xl text-gray-200 hover:bg-gray-800 hover:text-white transition-colors text-base font-medium cursor-pointer">
+                <i class="fa-solid fa-file-arrow-up text-amber-400 w-6 text-center text-lg"></i>
+                <span class="text-left flex-1">Restaurar Backup</span>
                 <input type="file" id="importFile" accept=".json" class="hidden">
             </label>
         </div>
 
         <div class="p-4 border-t border-gray-800 text-xs text-center text-gray-500">
-            Agenda Financeira v1.1
+            Agenda Financeira v1.2
         </div>
     </aside>
 
@@ -546,8 +546,7 @@
                 try {
                     const importedData = JSON.parse(event.target.result);
                     if (Array.isArray(importedData)) {
-                        if (confirm(`Deseja importar ${importedData.length} registros? Isso substituirá ou mesclará com seus dados atuais.`)) {
-                            // Limpa os IDs antigos para evitar conflitos no Dexie
+                        if (confirm(`Deseja importar ${importedData.length} registros? Isso adicionará os dados à sua agenda.`)) {
                             const cleanData = importedData.map(({ id, ...rest }) => rest);
                             await db.transactions.bulkAdd(cleanData);
                             alert('Backup restaurado com sucesso!');
