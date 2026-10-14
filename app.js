@@ -52,8 +52,72 @@ document.addEventListener('DOMContentLoaded', async () => {
     await seedInitialDataIfNeeded();
     renderCalendar();
     setupSwipeGestures();
+    setupPullToRefresh();
     registerServiceWorker();
 });
+
+// Função para tratar valores monetários com vírgula e ponto corretamente
+function parseCurrency(valueStr) {
+    if (!valueStr) return 0;
+    let clean = String(valueStr).trim();
+    // Se contiver ponto e vírgula (ex: 1.500,50), remove o ponto de milhar e troca vírgula por ponto
+    if (clean.includes('.') && clean.includes(',')) {
+        clean = clean.replace(/\./g, '').replace(',', '.');
+    } else if (clean.includes(',')) {
+        // Se contiver apenas vírgula (ex: 150,50), troca por ponto
+        clean = clean.replace(',', '.');
+    }
+    return parseFloat(clean) || 0;
+}
+
+function setupPullToRefresh() {
+    const swipeContainer = document.getElementById('swipeContainer');
+    const indicator = document.getElementById('pullToRefreshIndicator');
+    let startY = 0;
+    let pulling = false;
+
+    swipeContainer.addEventListener('touchstart', (e) => {
+        if (swipeContainer.scrollTop === 0) {
+            startY = e.touches[0].clientY;
+            pulling = true;
+        }
+    }, { passive: true });
+
+    swipeContainer.addEventListener('touchmove', (e) => {
+        if (!pulling) return;
+        const currentY = e.touches[0].clientY;
+        const diff = currentY - startY;
+
+        if (diff > 0 && swipeContainer.scrollTop === 0) {
+            const pullDistance = Math.min(diff * 0.4, 60);
+            indicator.style.height = `${pullDistance}px`;
+            indicator.style.opacity = `${pullDistance / 60}`;
+        }
+    }, { passive: true });
+
+    swipeContainer.addEventListener('touchend', (e) => {
+        if (!pulling) return;
+        pulling = false;
+        const currentY = e.changedTouches[0].clientY;
+        const diff = currentY - startY;
+
+        if (diff > 70 && swipeContainer.scrollTop === 0) {
+            indicator.style.height = '40px';
+            indicator.style.opacity = '1';
+            indicator.innerHTML = '<i class="fa-solid fa-rotate animate-spin mr-2"></i> Atualizando...';
+            
+            setTimeout(() => {
+                renderCalendar();
+                indicator.style.height = '0px';
+                indicator.style.opacity = '0';
+                indicator.innerHTML = '<i class="fa-solid fa-rotate animate-spin mr-2"></i> Solte para atualizar...';
+            }, 600);
+        } else {
+            indicator.style.height = '0px';
+            indicator.style.opacity = '0';
+        }
+    }, { passive: true });
+}
 
 function setupSwipeGestures() {
     const swipeContainer = document.getElementById('swipeContainer');
@@ -227,7 +291,6 @@ async function openReports() {
     document.getElementById('reportPending').textContent = `R$ ${pendingSum.toFixed(2)}`;
     document.getElementById('reportTotal').textContent = `R$ ${totalSum.toFixed(2)}`;
 
-    // Renderizar gráfico/barras por categoria
     const categorySummaryList = document.getElementById('categorySummaryList');
     categorySummaryList.innerHTML = '';
 
@@ -416,7 +479,8 @@ transactionForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     const id = document.getElementById('transactionId').value;
     const name = document.getElementById('nameInput').value;
-    const amount = parseFloat(document.getElementById('amountInput').value);
+    const rawAmount = document.getElementById('amountInput').value;
+    const amount = parseCurrency(rawAmount);
     const category = document.getElementById('categoryInput').value;
     const baseDateStr = document.getElementById('dateInput').value;
     const status = document.querySelector('input[name="status"]:checked').value;
