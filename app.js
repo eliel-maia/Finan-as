@@ -3,13 +3,33 @@ db.version(2).stores({
     transactions: '++id, name, amount, date, status, category'
 });
 
-let currentDate = new Date(); // Inicia no mês atual (ou Outubro 2026 se preferir fixo)
+let currentDate = new Date();
 let pickerYear = currentDate.getFullYear();
 
 const monthNames = [
     "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", 
     "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
 ];
+
+// Paleta de cores padrão para o gráfico de rosca por categoria
+const categoryColors = {
+    "Cartão de Crédito": "#3b82f6", // Azul
+    "Financiamento": "#ef4444",     // Vermelho
+    "Dívida": "#10b981",            // Verde esmeralda
+    "Moradia": "#f97316",           // Laranja
+    "Outros": "#a855f7",            // Roxo
+    "Transporte": "#ec4899",        // Rosa
+    "Empréstimo": "#06b6d4",        // Ciano
+    "Comunicação": "#84cc16",       // Verde limão
+    "Alimentação": "#eab308",       // Amarelo
+    "Educação": "#6366f1",          // Índigo
+    "Lazer": "#14b8a6",             // Teal
+    "Saúde": "#f43f5e"              // Rose
+};
+
+function getCategoryColor(category) {
+    return categoryColors[category] || "#6b7280"; // Cinza padrão se não encontrar
+}
 
 const calendarGrid = document.getElementById('calendarGrid');
 const currentMonthYearEl = document.getElementById('currentMonthYear');
@@ -242,52 +262,55 @@ async function openReports() {
         .between(startDateStr, endDateStr + '\uffff', true, true)
         .toArray();
 
-    let paidSum = 0;
-    let pendingSum = 0;
+    let totalSum = 0;
     const catTotals = {};
 
     transactions.forEach(tx => {
         const amount = parseFloat(tx.amount) || 0;
         const cat = tx.category || 'Outros';
-
-        if (tx.status === 'paid') {
-            paidSum += amount;
-        } else {
-            pendingSum += amount;
-        }
-
+        totalSum += amount;
         catTotals[cat] = (catTotals[cat] || 0) + amount;
     });
 
-    const totalSum = paidSum + pendingSum;
-
-    document.getElementById('reportPaid').textContent = `R$ ${paidSum.toFixed(2)}`;
-    document.getElementById('reportPending').textContent = `R$ ${pendingSum.toFixed(2)}`;
-    document.getElementById('reportTotal').textContent = `R$ ${totalSum.toFixed(2)}`;
+    document.getElementById('reportTotal').textContent = `R$ ${totalSum.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
     const categorySummaryList = document.getElementById('categorySummaryList');
     categorySummaryList.innerHTML = '';
 
     const categories = Object.keys(catTotals).sort((a, b) => catTotals[b] - catTotals[a]);
 
+    const donutChart = document.getElementById('donutChart');
+
     if (categories.length === 0) {
-        categorySummaryList.innerHTML = '<p class="text-xs text-gray-500 italic">Nenhum lançamento no mês.</p>';
+        categorySummaryList.innerHTML = '<p class="text-xs text-gray-500 italic text-center py-4">Nenhum lançamento no mês.</p>';
+        donutChart.style.background = 'conic-gradient(#374151 0deg 360deg)';
     } else {
+        let cumulativePercent = 0;
+        const gradientStops = [];
+
         categories.forEach(cat => {
             const val = catTotals[cat];
-            const pct = totalSum > 0 ? Math.round((val / totalSum) * 100) : 0;
+            const pct = totalSum > 0 ? (val / totalSum) * 100 : 0;
+            const start = cumulativePercent;
+            cumulativePercent += pct;
+            const color = getCategoryColor(cat);
+            gradientStops.push(`${color} ${start}% ${cumulativePercent}%`);
+
             categorySummaryList.innerHTML += `
-                <div class="bg-[#121212] border border-gray-800 rounded-xl p-3">
-                    <div class="flex justify-between items-center text-xs font-semibold mb-1">
-                        <span class="text-gray-300">${cat}</span>
-                        <span class="text-white">R$ ${val.toFixed(2)} (${pct}%)</span>
+                <div class="flex items-center justify-between text-sm py-1 border-b border-gray-800/50 last:border-0">
+                    <div class="flex items-center space-x-3 flex-1 min-w-0">
+                        <span class="w-3 h-3 rounded-full flex-shrink-0" style="background-color: ${color};"></span>
+                        <span class="text-gray-300 truncate text-xs font-medium">${cat}</span>
                     </div>
-                    <div class="w-full bg-gray-800 h-2 rounded-full overflow-hidden">
-                        <div class="bg-indigo-500 h-full rounded-full transition-all duration-300" style="width: ${pct}%"></div>
+                    <div class="flex items-center space-x-4 flex-shrink-0 text-xs">
+                        <span class="text-gray-400 font-semibold w-12 text-right">${pct.toFixed(1)}%</span>
+                        <span class="text-white font-bold w-20 text-right">R$ ${val.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                     </div>
                 </div>
             `;
         });
+
+        donutChart.style.background = `conic-gradient(${gradientStops.join(', ')})`;
     }
 
     reportsModal.classList.remove('hidden');
