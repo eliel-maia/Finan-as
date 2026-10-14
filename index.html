@@ -1,415 +1,446 @@
 <!DOCTYPE html>
-<html lang="pt-BR" class="dark">
+<html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Agenda Financeira PWA</title>
-    
-    <!-- PWA Manifest -->
-    <link rel="manifest" href="data:application/manifest+json;charset=utf-8,{
-        %22name%22: %22Agenda Financeira%22,
-        %22short_name%22: %22Finanças%22,
-        %22start_url%22: %22./index.html%22,
-        %22display%22: %22standalone%22,
-        %22background_color%22: %22%23121212%22,
-        %22theme_color%22: %22%231f2937%22,
-        %22icons%22: [
-            {
-                %22src%22: %22https://cdn-icons-png.flaticon.com/512/3135/3135706.png%22,
-                %22sizes%22: %22512x512%22,
-                %22type%22: %22image/png%22
-            }
-        ]
-    }">
-    <meta name="theme-color" content="#121212">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Controle Financeiro - Agenda</title>
+  
+  <!-- Manifest Dinâmico para PWA -->
+  <link rel="manifest" id="pwa-manifest" />
+  <meta name="theme-color" content="#121318" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        darkBg: '#121212',
-                        cardBg: '#1e1e1e',
-                        paidGreen: '#059669',
-                        pendingOrange: '#d97706',
-                    }
-                }
-            }
-        }
-    </script>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Dexie.js (IndexedDB Wrapper) -->
+  <script src="https://unpkg.com/dexie@3.2.4/dist/dexie.js"></script>
 
-    <!-- FontAwesome Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
 
-    <!-- Dexie.js (IndexedDB wrapper) -->
-    <script src="https://unpkg.com/dexie@3/dist/dexie.js"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            appDark: '#121318',
+            appCard: '#1a1b23',
+            appHeader: '#181920',
+            paidGreen: '#00875a',
+            paidGreenHover: '#00a36c',
+            pendingOrange: '#d97706',
+            pendingOrangeHover: '#f59e0b',
+            accentBlue: '#3b82f6'
+          }
+        }
+      }
+    }
+  </script>
 
-    <style>
-        /* Custom scrollbar for clean dark mode look */
-        ::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #121212;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #333333;
-            border-radius: 3px;
-        }
-    </style>
+  <style>
+    /* Estilização da barra de rolagem e prevenção de seleção acidental */
+    body {
+      background-color: #121318;
+      color: #e2e8f0;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: manipulation;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 4px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 4px;
+    }
+  </style>
 </head>
-<body class="bg-darkBg text-gray-100 min-h-screen flex flex-col font-sans select-none">
+<body class="h-screen w-screen flex flex-col overflow-hidden bg-appDark text-gray-200 font-sans">
 
-    <!-- Header -->
-    <header class="bg-[#18181b] border-b border-gray-800 px-4 py-3 flex items-center justify-between sticky top-0 z-20">
-        <div class="flex items-center space-x-3">
-            <button id="menuBtn" class="text-gray-400 hover:text-white focus:outline-none text-xl p-1">
-                <i class="fa-solid fa-bars"></i>
-            </button>
-            <div class="flex items-center space-x-2">
-                <h1 id="currentMonthYear" class="text-lg font-bold tracking-wide text-white capitalize">Outubro 2026</h1>
-                <i class="fa-solid fa-chevron-down text-xs text-gray-400"></i>
-            </div>
-        </div>
-
-        <div class="flex items-center space-x-4">
-            <button id="searchBtn" class="text-gray-400 hover:text-white text-lg p-1">
-                <i class="fa-solid fa-magnifying-glass"></i>
-            </button>
-            <button id="todayBtn" class="border border-gray-700 rounded px-2 py-0.5 text-xs font-semibold text-gray-300 hover:bg-gray-800">
-                Hoje
-            </button>
-            <div class="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center font-bold text-sm overflow-hidden border border-gray-600">
-                <span>💰</span>
-            </div>
-        </div>
-    </header>
-
-    <!-- Sub-header: Days of the week -->
-    <div class="grid grid-cols-7 bg-[#18181b] border-b border-gray-800 text-center text-xs font-medium text-gray-400 py-2 sticky top-[57px] z-20">
-        <div>dom.</div>
-        <div>seg.</div>
-        <div>ter.</div>
-        <div>qua.</div>
-        <div>qui.</div>
-        <div>sex.</div>
-        <div>sáb.</div>
+  <!-- CABEÇALHO SUPERIOR -->
+  <header class="bg-appHeader border-b border-gray-800 px-4 py-3 flex items-center justify-between shadow-md">
+    <div class="flex items-center space-x-3">
+      <button id="btn-menu" class="p-2 hover:bg-gray-800 rounded-lg text-gray-300">
+        <i data-lucide="menu" class="w-6 h-6"></i>
+      </button>
+      <div class="flex items-center space-x-2">
+        <h1 id="month-year-label" class="text-xl font-bold text-white capitalize">Outubro 2026</h1>
+        <i data-lucide="chevron-down" class="w-4 h-4 text-gray-400"></i>
+      </div>
     </div>
 
-    <!-- Main Calendar Grid Container -->
-    <main class="flex-1 overflow-y-auto pb-24">
-        <div id="calendarGrid" class="grid grid-cols-7 auto-rows-fr min-h-[calc(100vh-120px)] border-l border-gray-800">
-            <!-- Gerado via JavaScript -->
-        </div>
-    </main>
+    <div class="flex items-center space-x-2">
+      <!-- Botão Voltar para Hoje -->
+      <button id="btn-today" class="px-3 py-1.5 text-xs font-semibold bg-gray-800 hover:bg-gray-700 text-gray-200 rounded-full border border-gray-700 transition">
+        Hoje
+      </button>
+    </div>
+  </header>
 
-    <!-- Floating Action Button (+) -->
-    <button id="openModalBtn" class="fixed right-5 bottom-6 w-14 h-14 bg-indigo-600 hover:bg-indigo-500 text-white rounded-full shadow-2xl flex items-center justify-center text-2xl z-30 focus:outline-none transition-transform active:scale-95">
-        <i class="fa-solid fa-plus"></i>
+  <!-- CONTROLES DE NAVEGAÇÃO DE MÊS -->
+  <div class="bg-appHeader/60 border-b border-gray-800/80 px-4 py-2 flex justify-between items-center text-sm">
+    <button id="btn-prev-month" class="p-1 hover:bg-gray-800 rounded-md text-gray-400 hover:text-white flex items-center space-x-1">
+      <i data-lucide="chevron-left" class="w-5 h-5"></i>
+      <span class="hidden sm:inline">Anterior</span>
     </button>
-
-    <!-- Modal de Cadastro / Edição -->
-    <div id="transactionModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-        <div class="bg-cardBg border border-gray-800 rounded-2xl w-full max-w-md p-6 shadow-2xl relative animate-in fade-in zoom-in duration-200">
-            <div class="flex justify-between items-center mb-5">
-                <h2 id="modalTitle" class="text-lg font-bold text-white">Nova Conta</h2>
-                <button id="closeModalBtn" class="text-gray-400 hover:text-white p-1">
-                    <i class="fa-solid fa-xmark text-lg"></i>
-                </button>
-            </div>
-
-            <form id="transactionForm" class="space-y-4">
-                <input type="hidden" id="transactionId">
-                
-                <div>
-                    <label class="block text-xs font-semibold text-gray-400 uppercase mb-1">Nome da Conta / Despesa</label>
-                    <input type="text" id="nameInput" required placeholder="Ex: Nubank, Aluguel, Academia" 
-                        class="w-full bg-[#121212] border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500 text-sm">
-                </div>
-
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="block text-xs font-semibold text-gray-400 uppercase mb-1">Valor (R$)</label>
-                        <input type="number" step="0.01" id="amountInput" required placeholder="0,00" 
-                            class="w-full bg-[#121212] border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500 text-sm">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-gray-400 uppercase mb-1">Data de Vencimento</label>
-                        <input type="date" id="dateInput" required 
-                            class="w-full bg-[#121212] border border-gray-700 rounded-xl px-3 py-3 text-white focus:outline-none focus:border-indigo-500 text-sm">
-                    </div>
-                </div>
-
-                <div>
-                    <label class="block text-xs font-semibold text-gray-400 uppercase mb-1">Status</label>
-                    <div class="grid grid-cols-2 gap-3">
-                        <label class="border border-gray-700 rounded-xl p-3 flex items-center justify-center space-x-2 cursor-pointer hover:border-gray-500 has-[:checked]:border-pendingOrange has-[:checked]:bg-pendingOrange/10">
-                            <input type="radio" name="status" value="pending" checked class="text-pendingOrange focus:ring-0">
-                            <span class="text-sm font-medium text-amber-500">Pendente</span>
-                        </label>
-                        <label class="border border-gray-700 rounded-xl p-3 flex items-center justify-center space-x-2 cursor-pointer hover:border-gray-500 has-[:checked]:border-paidGreen has-[:checked]:bg-paidGreen/10">
-                            <input type="radio" name="status" value="paid" class="text-paidGreen focus:ring-0">
-                            <span class="text-sm font-medium text-emerald-500">Pago</span>
-                        </label>
-                    </div>
-                </div>
-
-                <div class="flex space-x-3 pt-3">
-                    <button type="button" id="deleteBtn" class="hidden bg-red-600/20 hover:bg-red-600/30 text-red-400 px-4 py-3 rounded-xl font-medium text-sm transition-colors">
-                        <i class="fa-solid fa-trash"></i>
-                    </button>
-                    <button type="submit" class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-3 rounded-xl text-sm shadow-lg transition-colors">
-                        Salvar Conta
-                    </button>
-                </div>
-            </form>
-        </div>
+    <div id="summary-month" class="text-xs font-medium text-gray-400">
+      <span text-emerald-400 class="text-paidGreen font-bold" id="total-paid">Pago: R$ 0,00</span> | 
+      <span text-amber-500 class="text-pendingOrange font-bold" id="total-pending">Pendente: R$ 0,00</span>
     </div>
+    <button id="btn-next-month" class="p-1 hover:bg-gray-800 rounded-md text-gray-400 hover:text-white flex items-center space-x-1">
+      <span class="hidden sm:inline">Próximo</span>
+      <i data-lucide="chevron-right" class="w-5 h-5"></i>
+    </button>
+  </div>
 
-    <!-- Application Script -->
-    <script>
-        // 1. Configuração do Banco de Dados Local com Dexie.js
-        const db = new Dexie('FinanceAgendaDB');
-        db.version(1).stores({
-            transactions: '++id, name, amount, date, status'
+  <!-- CABEÇALHO COM DIAS DA SEMANA -->
+  <div class="grid grid-cols-7 bg-appHeader text-center py-2 border-b border-gray-800 text-xs font-bold text-gray-400">
+    <div>dom.</div>
+    <div>seg.</div>
+    <div>ter.</div>
+    <div>qua.</div>
+    <div>qui.</div>
+    <div>sex.</div>
+    <div>sáb.</div>
+  </div>
+
+  <!-- GRADE DO CALENDÁRIO (AGENDA) -->
+  <main id="calendar-grid" class="flex-1 grid grid-cols-7 auto-rows-fr gap-[1px] bg-gray-800/50 overflow-y-auto custom-scrollbar">
+    <!-- Dias gerados via JavaScript -->
+  </main>
+
+  <!-- MODAL DE CADASTRO / EDIÇÃO DE CONTA -->
+  <div id="modal-account" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+    <div class="bg-appCard border border-gray-700 rounded-2xl w-full max-w-md p-6 shadow-2xl space-y-4">
+      <div class="flex justify-between items-center border-b border-gray-700 pb-3">
+        <h3 id="modal-title" class="text-lg font-bold text-white">Nova Conta / Lançamento</h3>
+        <button id="btn-close-modal" class="text-gray-400 hover:text-white">
+          <i data-lucide="x" class="w-6 h-6"></i>
+        </button>
+      </div>
+
+      <form id="form-account" class="space-y-4">
+        <input type="hidden" id="account-id" />
+        
+        <div>
+          <label class="block text-xs font-medium text-gray-400 mb-1">Título / Descrição</label>
+          <input type="text" id="account-title" required placeholder="Ex: Nubank, Netflix, Celular"
+            class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-accentBlue" />
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-gray-400 mb-1">Valor (R$)</label>
+            <input type="number" step="0.01" id="account-amount" placeholder="0,00"
+              class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-accentBlue" />
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-gray-400 mb-1">Vencimento</label>
+            <input type="date" id="account-date" required
+              class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-accentBlue" />
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-gray-400 mb-1">Status do Pagamento</label>
+          <div class="grid grid-cols-2 gap-3">
+            <label class="flex items-center justify-center p-2.5 rounded-lg border border-gray-700 bg-gray-800 cursor-pointer text-sm font-medium has-[:checked]:bg-paidGreen has-[:checked]:border-emerald-400 transition">
+              <input type="radio" name="account-status" value="paid" class="sr-only" id="status-paid" />
+              <i data-lucide="check-circle" class="w-4 h-4 mr-2"></i> Pago (Verde)
+            </label>
+            <label class="flex items-center justify-center p-2.5 rounded-lg border border-gray-700 bg-gray-800 cursor-pointer text-sm font-medium has-[:checked]:bg-pendingOrange has-[:checked]:border-amber-400 transition">
+              <input type="radio" name="account-status" value="pending" checked class="sr-only" id="status-pending" />
+              <i data-lucide="clock" class="w-4 h-4 mr-2"></i> Pendente (Laranja)
+            </label>
+          </div>
+        </div>
+
+        <div class="flex justify-between items-center pt-2">
+          <button type="button" id="btn-delete-account" class="text-red-400 hover:text-red-300 text-sm hidden flex items-center space-x-1">
+            <i data-lucide="trash-2" class="w-4 h-4"></i>
+            <span>Excluir</span>
+          </button>
+
+          <div class="flex space-x-2 ml-auto">
+            <button type="button" id="btn-cancel-modal" class="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-sm font-medium">
+              Cancelar
+            </button>
+            <button type="submit" class="px-4 py-2 bg-accentBlue hover:bg-blue-600 text-white rounded-lg text-sm font-medium transition">
+              Salvar
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- SCRIPT DE INICIALIZAÇÃO E LÓGICA DO APP -->
+  <script>
+    // 1. Configuração do Banco de Dados Local (IndexedDB via Dexie)
+    const db = new Dexie('FinanceAppDB');
+    db.version(1).stores({
+      accounts: '++id, title, amount, date, status'
+    });
+
+    // Estado Atual do Aplicativo
+    let currentDate = new Date();
+    
+    // Elementos do DOM
+    const calendarGrid = document.getElementById('calendar-grid');
+    const monthYearLabel = document.getElementById('month-year-label');
+    const modal = document.getElementById('modal-account');
+    const formAccount = document.getElementById('form-account');
+    const btnDeleteAccount = document.getElementById('btn-delete-account');
+
+    // Inicialização do Lucide Icons
+    function updateIcons() {
+      if (window.lucide) {
+        lucide.createIcons();
+      }
+    }
+
+    // Gerador Dinâmico de Manifest para PWA
+    function setupPWA() {
+      const manifest = {
+        name: "Controle Financeiro Agenda",
+        short_name: "Finanças",
+        start_url: "./",
+        display: "standalone",
+        background_color: "#121318",
+        theme_color: "#121318",
+        icons: [{
+          src: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%23121318'/><text y='.9em' font-size='90'>📅</text></svg>",
+          sizes: "192x192 512x512",
+          type: "image/svg+xml"
+        }]
+      };
+      const stringManifest = JSON.stringify(manifest);
+      const blob = new Blob([stringManifest], {type: 'application/json'});
+      document.getElementById('pwa-manifest').setAttribute('href', URL.createObjectURL(blob));
+    }
+
+    // Renderização do Calendário
+    async function renderCalendar() {
+      calendarGrid.innerHTML = '';
+      
+      const year = currentDate.getFullYear();
+      const month = currentDate.getMonth();
+
+      // Formatação do Título do Mês
+      const monthName = new Intl.DateTimeFormat('pt-BR', { month: 'long' }).format(currentDate);
+      monthYearLabel.textContent = `${monthName} ${year}`;
+
+      // Primeiro dia do mês e total de dias
+      const firstDayOfMonth = new Date(year, month, 1).getDay();
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+      const daysInPrevMonth = new Date(year, month, 0).getDate();
+
+      // Busca das Contas do Mês Atual no IndexedDB
+      const startDateStr = `${year}-${String(month + 1).padStart(2, '0')}-01`;
+      const endDateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(daysInMonth).padStart(2, '0')}`;
+      
+      const accounts = await db.accounts
+        .where('date')
+        .between(startDateStr, endDateStr, true, true)
+        .toArray();
+
+      // Cálculo dos Totais do Mês
+      let totalPaid = 0;
+      let totalPending = 0;
+      accounts.forEach(acc => {
+        const val = parseFloat(acc.amount) || 0;
+        if (acc.status === 'paid') totalPaid += val;
+        else totalPending += val;
+      });
+
+      document.getElementById('total-paid').textContent = `Pago: R$ ${totalPaid.toFixed(2)}`;
+      document.getElementById('total-pending').textContent = `Pendente: R$ ${totalPending.toFixed(2)}`;
+
+      const today = new Date();
+      const isCurrentMonth = today.getFullYear() === year && today.getMonth() === month;
+
+      // 1. Dias do Mês Anterior (para preenchimento)
+      for (let i = firstDayOfMonth - 1; i >= 0; i--) {
+        const dayNum = daysInPrevMonth - i;
+        const cell = createDayCell(dayNum, true);
+        calendarGrid.appendChild(cell);
+      }
+
+      // 2. Dias do Mês Atual
+      for (let day = 1; day <= daysInMonth; day++) {
+        const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        const isToday = isCurrentMonth && today.getDate() === day;
+        
+        const dayAccounts = accounts.filter(acc => acc.date === dateStr);
+        const cell = createDayCell(day, false, isToday, dateStr, dayAccounts);
+        calendarGrid.appendChild(cell);
+      }
+
+      // 3. Dias do Próximo Mês (completar a grade)
+      const totalCells = firstDayOfMonth + daysInMonth;
+      const nextDays = (42 - totalCells) % 7; // Mantém grade uniforme
+      for (let day = 1; day <= nextDays; day++) {
+        const cell = createDayCell(day, true);
+        calendarGrid.appendChild(cell);
+      }
+
+      updateIcons();
+    }
+
+    // Criação dos Blocos dos Dias no Calendário
+    function createDayCell(dayNumber, isOtherMonth = false, isToday = false, dateStr = null, dayAccounts = []) {
+      const cell = document.createElement('div');
+      cell.className = `min-h-[90px] p-1 border-b border-r border-gray-800/40 flex flex-col justify-between ${
+        isOtherMonth ? 'bg-appDark/40 text-gray-600' : 'bg-appDark text-gray-200'
+      } cursor-pointer hover:bg-gray-800/30 transition relative`;
+
+      // Clique no dia abre o modal para adicionar nova conta naquela data
+      if (!isOtherMonth && dateStr) {
+        cell.addEventListener('click', (e) => {
+          // Impede abertura do modal do dia ao clicar em uma conta específica
+          if (e.target.closest('.account-badge')) return;
+          openModalForDate(dateStr);
+        });
+      }
+
+      // Cabeçalho do dia (Número do Dia)
+      const topRow = document.createElement('div');
+      topRow.className = 'flex justify-start p-1';
+
+      const dayNumSpan = document.createElement('span');
+      dayNumSpan.className = `text-xs font-bold w-6 h-6 flex items-center justify-center rounded-full ${
+        isToday ? 'bg-accentBlue text-white shadow-md' : ''
+      }`;
+      dayNumSpan.textContent = dayNumber;
+      topRow.appendChild(dayNumSpan);
+      cell.appendChild(topRow);
+
+      // Lista de Contas / Lançamentos
+      const badgeContainer = document.createElement('div');
+      badgeContainer.className = 'space-y-1 overflow-y-auto max-h-[75px] custom-scrollbar flex-1';
+
+      dayAccounts.forEach(acc => {
+        const badge = document.createElement('div');
+        const isPaid = acc.status === 'paid';
+        badge.className = `account-badge text-[10px] font-semibold px-2 py-1 rounded text-white truncate flex items-center justify-between shadow-sm border ${
+          isPaid 
+            ? 'bg-paidGreen border-emerald-600 hover:bg-paidGreenHover' 
+            : 'bg-pendingOrange border-amber-600 hover:bg-pendingOrangeHover'
+        }`;
+        
+        badge.innerHTML = `
+          <span class="truncate">${acc.title}</span>
+        `;
+
+        // Clique no badge permite editar a conta existente
+        badge.addEventListener('click', (e) => {
+          e.stopPropagation();
+          openModalForEdit(acc);
         });
 
-        // Estado atual do calendário (Exemplo padrão Outubro 2026)
-        let currentDate = new Date(2026, 9, 1); // Mês 9 = Outubro
+        badgeContainer.appendChild(badge);
+      });
 
-        const monthNames = [
-            "Janeiro", "Fevereiro", "Março", "Abril", "Maior", "Junho", 
-            "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
-        ];
+      cell.appendChild(badgeContainer);
+      return cell;
+    }
 
-        // Elementos DOM
-        const calendarGrid = document.getElementById('calendarGrid');
-        const currentMonthYearEl = document.getElementById('currentMonthYear');
-        const openModalBtn = document.getElementById('openModalBtn');
-        const closeModalBtn = document.getElementById('closeModalBtn');
-        const transactionModal = document.getElementById('transactionModal');
-        const transactionForm = document.getElementById('transactionForm');
-        const deleteBtn = document.getElementById('deleteBtn');
-        const modalTitle = document.getElementById('modalTitle');
+    // Modal - Abertura para Novo Cadastro
+    function openModalForDate(dateStr) {
+      formAccount.reset();
+      document.getElementById('account-id').value = '';
+      document.getElementById('account-date').value = dateStr;
+      document.getElementById('modal-title').textContent = 'Nova Conta';
+      document.getElementById('status-pending').checked = true;
+      btnDeleteAccount.classList.add('hidden');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
 
-        // Inicialização
-        document.addEventListener('DOMContentLoaded', async () => {
-            await seedInitialDataIfNeeded();
-            renderCalendar();
-            registerServiceWorker();
-        });
+    // Modal - Abertura para Edição
+    function openModalForEdit(acc) {
+      document.getElementById('account-id').value = acc.id;
+      document.getElementById('account-title').value = acc.title;
+      document.getElementById('account-amount').value = acc.amount || '';
+      document.getElementById('account-date').value = acc.date;
+      document.getElementById('modal-title').textContent = 'Editar Conta';
 
-        // Popular dados iniciais se o banco estiver vazio (Para espelhar a sua imagem de exemplo)
-        async function seedInitialDataIfNeeded() {
-            const count = await db.transactions.count();
-            if (count === 0) {
-                const sampleData = [
-                    { name: 'Nubank', amount: 350.00, date: '2026-10-27', status: 'paid' },
-                    { name: 'Celular', amount: 69.90, date: '2026-10-01', status: 'pending' },
-                    { name: 'RecargaP', amount: 30.00, date: '2026-10-01', status: 'paid' },
-                    { name: 'Jejum', amount: 0, date: '2026-10-04', status: 'pending' },
-                    { name: 'Ipanema', amount: 120.00, date: '2026-10-08', status: 'paid' },
-                    { name: 'Itaú', amount: 450.00, date: '2026-10-08', status: 'paid' },
-                    { name: 'Caixa', amount: 800.00, date: '2026-10-10', status: 'paid' },
-                    { name: 'Faculdade', amount: 650.00, date: '2026-10-10', status: 'paid' },
-                    { name: 'Terreno', amount: 500.00, date: '2026-10-10', status: 'pending' },
-                    { name: 'Google One', amount: 14.99, date: '2026-10-12', status: 'paid' },
-                    { name: 'Água / Luz', amount: 210.50, date: '2026-10-13', status: 'paid' },
-                    { name: 'Bradesco', amount: 320.00, date: '2026-10-13', status: 'paid' },
-                    { name: 'Netflix', amount: 55.90, date: '2026-10-13', status: 'paid' },
-                    { name: 'Nubank', amount: 420.00, date: '2026-10-27', status: 'pending' }
-                ];
-                await db.transactions.bulkAdd(sampleData);
-            }
-        }
+      if (acc.status === 'paid') {
+        document.getElementById('status-paid').checked = true;
+      } else {
+        document.getElementById('status-pending').checked = true;
+      }
 
-        // Renderização do Calendário Estilo Grade Mensal
-        async function renderCalendar() {
-            calendarGrid.innerHTML = '';
-            
-            const year = currentDate.getFullYear();
-            const month = currentDate.getMonth();
+      btnDeleteAccount.classList.remove('hidden');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
 
-            currentMonthYearEl.textContent = `${monthNames[month]} ${year}`;
+    // Modal - Fechamento
+    function closeModal() {
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
 
-            // Primeiro dia do mês e total de dias
-            const firstDayIndex = new Date(year, month, 1).getDay();
-            const totalDays = new Date(year, month + 1, 0).getDate();
-            const prevTotalDays = new Date(year, month, 0).getDate();
+    // Eventos e Submissão do Formulário
+    formAccount.addEventListener('submit', async (e) => {
+      e.preventDefault();
 
-            // Buscar transações deste mês no IndexedDB
-            const startDateStr = `${year}-${String(month + 1).padStart(2, '0')}-01`;
-            const endDateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(totalDays).padStart(2, '0')}`;
-            
-            const transactions = await db.transactions
-                .where('date')
-                .between(startDateStr, endDateStr + '\uffff', true, true)
-                .toArray();
+      const id = document.getElementById('account-id').value;
+      const title = document.getElementById('account-title').value;
+      const amount = document.getElementById('account-amount').value;
+      const date = document.getElementById('account-date').value;
+      const status = document.querySelector('input[name="account-status"]:checked').value;
 
-            // Organizar transações por dia
-            const txByDay = {};
-            transactions.forEach(tx => {
-                const dayNum = parseInt(tx.date.split('-')[2], 10);
-                if (!txByDay[dayNum]) txByDay[dayNum] = [];
-                txByDay[dayNum].push(tx);
-            });
+      const accountData = { title, amount, date, status };
 
-            let cellsHTML = '';
+      if (id) {
+        await db.accounts.update(parseInt(id), accountData);
+      } else {
+        await db.accounts.add(accountData);
+      }
 
-            // Dias do mês anterior (preenchimento da grade)
-            for (let i = firstDayIndex; i > 0; i--) {
-                const dayNum = prevTotalDays - i + 1;
-                cellsHTML += `
-                    <div class="border-b border-r border-gray-800/60 p-1 min-h-[100px] bg-[#121212]/40 opacity-40">
-                        <span class="text-xs text-gray-500 font-semibold px-1">${dayNum}</span>
-                    </div>
-                `;
-            }
+      closeModal();
+      renderCalendar();
+    });
 
-            // Dias do mês atual
-            const today = new Date();
-            for (let day = 1; day <= totalDays; day++) {
-                const isToday = today.getDate() === day && today.getMonth() === month && today.getFullYear() === year;
-                const dayTxs = txByDay[day] || [];
+    // Exclusão de Conta
+    btnDeleteAccount.addEventListener('click', async () => {
+      const id = document.getElementById('account-id').value;
+      if (id && confirm('Deseja realmente excluir esta conta?')) {
+        await db.accounts.delete(parseInt(id));
+        closeModal();
+        renderCalendar();
+      }
+    });
 
-                let txBadges = '';
-                dayTxs.forEach(tx => {
-                    const bgClass = tx.status === 'paid' ? 'bg-paidGreen/90 text-white' : 'bg-pendingOrange/90 text-white';
-                    txBadges += `
-                        <div onclick="openEditModal(${tx.id})" class="${bgClass} text-[11px] font-medium px-1.5 py-0.5 rounded mb-1 truncate cursor-pointer shadow-sm hover:opacity-80 transition-opacity flex items-center justify-between">
-                            <span class="truncate">${tx.name}</span>
-                        </div>
-                    `;
-                });
+    // Navegação entre Meses
+    document.getElementById('btn-prev-month').addEventListener('click', () => {
+      currentDate.setMonth(currentDate.getMonth() - 1);
+      renderCalendar();
+    });
 
-                cellsHTML += `
-                    <div onclick="openAddModalForDate(${day})" class="border-b border-r border-gray-800 p-1 min-h-[105px] bg-darkBg hover:bg-[#1a1a1a] transition-colors cursor-pointer flex flex-col">
-                        <div class="flex items-center justify-between mb-1">
-                            <span class="text-xs font-bold px-1.5 py-0.5 rounded-full ${isToday ? 'bg-blue-600 text-white' : 'text-gray-400'}">${day}</span>
-                        </div>
-                        <div class="flex-1 overflow-y-auto space-y-1">
-                            ${txBadges}
-                        </div>
-                    </div>
-                `;
-            }
+    document.getElementById('btn-next-month').addEventListener('click', () => {
+      currentDate.setMonth(currentDate.getMonth() + 1);
+      renderCalendar();
+    });
 
-            calendarGrid.innerHTML = cellsHTML;
-        }
+    document.getElementById('btn-today').addEventListener('click', () => {
+      currentDate = new Date();
+      renderCalendar();
+    });
 
-        // Controle do Modal
-        function openAddModalForDate(day) {
-            const year = currentDate.getFullYear();
-            const month = String(currentDate.getMonth() + 1).padStart(2, '0');
-            const dayStr = String(day).padStart(2, '0');
-            
-            document.getElementById('transactionId').value = '';
-            document.getElementById('nameInput').value = '';
-            document.getElementById('amountInput').value = '';
-            document.getElementById('dateInput').value = `${year}-${month}-${dayStr}`;
-            document.querySelector('input[name="status"][value="pending"]').checked = true;
-            
-            modalTitle.textContent = 'Nova Conta';
-            deleteBtn.classList.add('hidden');
-            transactionModal.classList.remove('hidden');
-        }
+    document.getElementById('btn-close-modal').addEventListener('click', closeModal);
+    document.getElementById('btn-cancel-modal').addEventListener('click', closeModal);
 
-        openModalBtn.addEventListener('click', () => {
-            const todayStr = new Date().toISOString().split('T')[0];
-            document.getElementById('transactionId').value = '';
-            document.getElementById('nameInput').value = '';
-            document.getElementById('amountInput').value = '';
-            document.getElementById('dateInput').value = todayStr;
-            document.querySelector('input[name="status"][value="pending"]').checked = true;
-            
-            modalTitle.textContent = 'Nova Conta';
-            deleteBtn.classList.add('hidden');
-            transactionModal.classList.remove('hidden');
-        });
-
-        closeModalBtn.addEventListener('click', () => {
-            transactionModal.classList.add('hidden');
-        });
-
-        // Abrir para edição
-        window.openEditModal = async function(id) {
-            event.stopPropagation();
-            const tx = await db.transactions.get(id);
-            if (!tx) return;
-
-            document.getElementById('transactionId').value = tx.id;
-            document.getElementById('nameInput').value = tx.name;
-            document.getElementById('amountInput').value = tx.amount;
-            document.getElementById('dateInput').value = tx.date;
-            document.querySelector(`input[name="status"][value="${tx.status}"]`).checked = true;
-
-            modalTitle.textContent = 'Editar Conta';
-            deleteBtn.classList.remove('hidden');
-            transactionModal.classList.remove('hidden');
-        };
-
-        // Salvar Transação (Criar ou Atualizar)
-        transactionForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const id = document.getElementById('transactionId').value;
-            const name = document.getElementById('nameInput').value;
-            const amount = parseFloat(document.getElementById('amountInput').value);
-            const date = document.getElementById('dateInput').value;
-            const status = document.querySelector('input[name="status"]:checked').value;
-
-            if (id) {
-                await db.transactions.update(parseInt(id), { name, amount, date, status });
-            } else {
-                await db.transactions.add({ name, amount, date, status });
-            }
-
-            transactionModal.classList.add('hidden');
-            renderCalendar();
-        });
-
-        // Excluir Transação
-        deleteBtn.addEventListener('click', async () => {
-            const id = document.getElementById('transactionId').value;
-            if (id && confirm('Deseja realmente excluir esta conta?')) {
-                await db.transactions.delete(parseInt(id));
-                transactionModal.classList.add('hidden');
-                renderCalendar();
-            }
-        });
-
-        // Botão Hoje
-        document.getElementById('todayBtn').addEventListener('click', () => {
-            currentDate = new Date(2026, 9, 1); // Voltando para Outubro 2026 conforme o exemplo da imagem
-            renderCalendar();
-        });
-
-        // Registro de Service Worker para PWA funcionar no Cloudflare Pages
-        function registerServiceWorker() {
-            if ('serviceWorker' in navigator) {
-                const swCode = `
-                    self.addEventListener('install', (e) => {
-                        self.skipWaiting();
-                    });
-                    self.addEventListener('activate', (e) => {
-                        e.waitUntil(clients.claim());
-                    });
-                    self.addEventListener('fetch', (e) => {
-                        e.respondWith(
-                            caches.match(e.request).then((resp) => resp || fetch(e.request))
-                        );
-                    });
-                `;
-                const blob = new Blob([swCode], { type: 'text/javascript' });
-                const swUrl = URL.createObjectURL(blob);
-                navigator.serviceWorker.register(swUrl)
-                    .then(() => console.log("Service Worker registrado com sucesso!"))
-                    .catch((err) => console.log("Erro ao registrar Service Worker:", err));
-            }
-        }
-    </script>
+    // Inicialização da Aplicação
+    window.addEventListener('DOMContentLoaded', () => {
+      setupPWA();
+      renderCalendar();
+    });
+  </script>
 </body>
 </html>
