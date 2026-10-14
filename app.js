@@ -3,7 +3,7 @@ db.version(2).stores({
     transactions: '++id, name, amount, date, status, category'
 });
 
-let currentDate = new Date(2026, 9, 1); // Outubro 2026
+let currentDate = new Date(); // Inicia no mês atual (ou Outubro 2026 se preferir fixo)
 let pickerYear = currentDate.getFullYear();
 
 const monthNames = [
@@ -49,7 +49,6 @@ recurrenceRadios.forEach(radio => {
 });
 
 document.addEventListener('DOMContentLoaded', async () => {
-    await seedInitialDataIfNeeded();
     renderCalendar();
     setupSwipeGestures();
     setupPullToRefresh();
@@ -60,11 +59,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 function parseCurrency(valueStr) {
     if (!valueStr) return 0;
     let clean = String(valueStr).trim();
-    // Se contiver ponto e vírgula (ex: 1.500,50), remove o ponto de milhar e troca vírgula por ponto
     if (clean.includes('.') && clean.includes(',')) {
         clean = clean.replace(/\./g, '').replace(',', '.');
     } else if (clean.includes(',')) {
-        // Se contiver apenas vírgula (ex: 150,50), troca por ponto
         clean = clean.replace(',', '.');
     }
     return parseFloat(clean) || 0;
@@ -144,29 +141,6 @@ function setupSwipeGestures() {
             currentDate.setMonth(currentDate.getMonth() + 1);
         }
         renderCalendar();
-    }
-}
-
-async function seedInitialDataIfNeeded() {
-    const count = await db.transactions.count();
-    if (count === 0) {
-        const sampleData = [
-            { name: 'Nubank', amount: 350.00, date: '2026-10-27', status: 'paid', category: 'Transporte' },
-            { name: 'Celular', amount: 69.90, date: '2026-10-01', status: 'pending', category: 'Lazer' },
-            { name: 'RecargaP', amount: 30.00, date: '2026-10-01', status: 'paid', category: 'Transporte' },
-            { name: 'Jejum', amount: 0, date: '2026-10-04', status: 'pending', category: 'Outros' },
-            { name: 'Ipanema', amount: 120.00, date: '2026-10-08', status: 'paid', category: 'Outros' },
-            { name: 'Itaú', amount: 450.00, date: '2026-10-08', status: 'paid', category: 'Transporte' },
-            { name: 'Caixa', amount: 800.00, date: '2026-10-10', status: 'paid', category: 'Moradia' },
-            { name: 'Faculdade', amount: 650.00, date: '2026-10-10', status: 'paid', category: 'Educação' },
-            { name: 'Terreno', amount: 500.00, date: '2026-10-10', status: 'pending', category: 'Moradia' },
-            { name: 'Google One', amount: 14.99, date: '2026-10-12', status: 'paid', category: 'Lazer' },
-            { name: 'Água / Luz', amount: 210.50, date: '2026-10-13', status: 'paid', category: 'Moradia' },
-            { name: 'Bradesco', amount: 320.00, date: '2026-10-13', status: 'paid', category: 'Transporte' },
-            { name: 'Netflix', amount: 55.90, date: '2026-10-13', status: 'paid', category: 'Lazer' },
-            { name: 'Nubank', amount: 420.00, date: '2026-10-27', status: 'pending', category: 'Transporte' }
-        ];
-        await db.transactions.bulkAdd(sampleData);
     }
 }
 
