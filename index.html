@@ -20,28 +20,7 @@
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
 
-  <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: {
-        extend: {
-          colors: {
-            appDark: '#121318',
-            appCard: '#1a1b23',
-            appHeader: '#181920',
-            paidGreen: '#00875a',
-            paidGreenHover: '#00a36c',
-            pendingOrange: '#d97706',
-            pendingOrangeHover: '#f59e0b',
-            accentBlue: '#3b82f6'
-          }
-        }
-      }
-    }
-  </script>
-
   <style>
-    /* Estilização da barra de rolagem e prevenção de seleção acidental */
     body {
       background-color: #121318;
       color: #e2e8f0;
@@ -58,10 +37,10 @@
     }
   </style>
 </head>
-<body class="h-screen w-screen flex flex-col overflow-hidden bg-appDark text-gray-200 font-sans">
+<body class="h-screen w-screen flex flex-col overflow-hidden bg-[#121318] text-gray-200 font-sans">
 
   <!-- CABEÇALHO SUPERIOR -->
-  <header class="bg-appHeader border-b border-gray-800 px-4 py-3 flex items-center justify-between shadow-md">
+  <header class="bg-[#181920] border-b border-gray-800 px-4 py-3 flex items-center justify-between shadow-md">
     <div class="flex items-center space-x-3">
       <button id="btn-menu" class="p-2 hover:bg-gray-800 rounded-lg text-gray-300">
         <i data-lucide="menu" class="w-6 h-6"></i>
@@ -81,14 +60,14 @@
   </header>
 
   <!-- CONTROLES DE NAVEGAÇÃO DE MÊS -->
-  <div class="bg-appHeader/60 border-b border-gray-800/80 px-4 py-2 flex justify-between items-center text-sm">
+  <div class="bg-[#181920]/60 border-b border-gray-800/80 px-4 py-2 flex justify-between items-center text-sm">
     <button id="btn-prev-month" class="p-1 hover:bg-gray-800 rounded-md text-gray-400 hover:text-white flex items-center space-x-1">
       <i data-lucide="chevron-left" class="w-5 h-5"></i>
       <span class="hidden sm:inline">Anterior</span>
     </button>
     <div id="summary-month" class="text-xs font-medium text-gray-400">
-      <span text-emerald-400 class="text-paidGreen font-bold" id="total-paid">Pago: R$ 0,00</span> | 
-      <span text-amber-500 class="text-pendingOrange font-bold" id="total-pending">Pendente: R$ 0,00</span>
+      <span class="text-emerald-500 font-bold" id="total-paid">Pago: R$ 0,00</span> | 
+      <span class="text-amber-500 font-bold" id="total-pending">Pendente: R$ 0,00</span>
     </div>
     <button id="btn-next-month" class="p-1 hover:bg-gray-800 rounded-md text-gray-400 hover:text-white flex items-center space-x-1">
       <span class="hidden sm:inline">Próximo</span>
@@ -97,7 +76,7 @@
   </div>
 
   <!-- CABEÇALHO COM DIAS DA SEMANA -->
-  <div class="grid grid-cols-7 bg-appHeader text-center py-2 border-b border-gray-800 text-xs font-bold text-gray-400">
+  <div class="grid grid-cols-7 bg-[#181920] text-center py-2 border-b border-gray-800 text-xs font-bold text-gray-400">
     <div>dom.</div>
     <div>seg.</div>
     <div>ter.</div>
@@ -114,7 +93,7 @@
 
   <!-- MODAL DE CADASTRO / EDIÇÃO DE CONTA -->
   <div id="modal-account" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
-    <div class="bg-appCard border border-gray-700 rounded-2xl w-full max-w-md p-6 shadow-2xl space-y-4">
+    <div class="bg-[#1a1b23] border border-gray-700 rounded-2xl w-full max-w-md p-6 shadow-2xl space-y-4">
       <div class="flex justify-between items-center border-b border-gray-700 pb-3">
         <h3 id="modal-title" class="text-lg font-bold text-white">Nova Conta / Lançamento</h3>
         <button id="btn-close-modal" class="text-gray-400 hover:text-white">
@@ -128,30 +107,30 @@
         <div>
           <label class="block text-xs font-medium text-gray-400 mb-1">Título / Descrição</label>
           <input type="text" id="account-title" required placeholder="Ex: Nubank, Netflix, Celular"
-            class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-accentBlue" />
+            class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-500" />
         </div>
 
         <div class="grid grid-cols-2 gap-3">
           <div>
             <label class="block text-xs font-medium text-gray-400 mb-1">Valor (R$)</label>
             <input type="number" step="0.01" id="account-amount" placeholder="0,00"
-              class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-accentBlue" />
+              class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-500" />
           </div>
           <div>
             <label class="block text-xs font-medium text-gray-400 mb-1">Vencimento</label>
             <input type="date" id="account-date" required
-              class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-accentBlue" />
+              class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-500" />
           </div>
         </div>
 
         <div>
           <label class="block text-xs font-medium text-gray-400 mb-1">Status do Pagamento</label>
           <div class="grid grid-cols-2 gap-3">
-            <label class="flex items-center justify-center p-2.5 rounded-lg border border-gray-700 bg-gray-800 cursor-pointer text-sm font-medium has-[:checked]:bg-paidGreen has-[:checked]:border-emerald-400 transition">
+            <label class="flex items-center justify-center p-2.5 rounded-lg border border-gray-700 bg-gray-800 cursor-pointer text-sm font-medium has-[:checked]:bg-emerald-600 has-[:checked]:border-emerald-400 transition">
               <input type="radio" name="account-status" value="paid" class="sr-only" id="status-paid" />
               <i data-lucide="check-circle" class="w-4 h-4 mr-2"></i> Pago (Verde)
             </label>
-            <label class="flex items-center justify-center p-2.5 rounded-lg border border-gray-700 bg-gray-800 cursor-pointer text-sm font-medium has-[:checked]:bg-pendingOrange has-[:checked]:border-amber-400 transition">
+            <label class="flex items-center justify-center p-2.5 rounded-lg border border-gray-700 bg-gray-800 cursor-pointer text-sm font-medium has-[:checked]:bg-amber-600 has-[:checked]:border-amber-400 transition">
               <input type="radio" name="account-status" value="pending" checked class="sr-only" id="status-pending" />
               <i data-lucide="clock" class="w-4 h-4 mr-2"></i> Pendente (Laranja)
             </label>
@@ -168,7 +147,7 @@
             <button type="button" id="btn-cancel-modal" class="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-sm font-medium">
               Cancelar
             </button>
-            <button type="submit" class="px-4 py-2 bg-accentBlue hover:bg-blue-600 text-white rounded-lg text-sm font-medium transition">
+            <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-medium transition">
               Salvar
             </button>
           </div>
@@ -179,30 +158,25 @@
 
   <!-- SCRIPT DE INICIALIZAÇÃO E LÓGICA DO APP -->
   <script>
-    // 1. Configuração do Banco de Dados Local (IndexedDB via Dexie)
     const db = new Dexie('FinanceAppDB');
     db.version(1).stores({
       accounts: '++id, title, amount, date, status'
     });
 
-    // Estado Atual do Aplicativo
     let currentDate = new Date();
     
-    // Elementos do DOM
     const calendarGrid = document.getElementById('calendar-grid');
     const monthYearLabel = document.getElementById('month-year-label');
     const modal = document.getElementById('modal-account');
     const formAccount = document.getElementById('form-account');
     const btnDeleteAccount = document.getElementById('btn-delete-account');
 
-    // Inicialização do Lucide Icons
     function updateIcons() {
       if (window.lucide) {
         lucide.createIcons();
       }
     }
 
-    // Gerador Dinâmico de Manifest para PWA
     function setupPWA() {
       const manifest = {
         name: "Controle Financeiro Agenda",
@@ -222,23 +196,19 @@
       document.getElementById('pwa-manifest').setAttribute('href', URL.createObjectURL(blob));
     }
 
-    // Renderização do Calendário
     async function renderCalendar() {
       calendarGrid.innerHTML = '';
       
       const year = currentDate.getFullYear();
       const month = currentDate.getMonth();
 
-      // Formatação do Título do Mês
       const monthName = new Intl.DateTimeFormat('pt-BR', { month: 'long' }).format(currentDate);
       monthYearLabel.textContent = `${monthName} ${year}`;
 
-      // Primeiro dia do mês e total de dias
       const firstDayOfMonth = new Date(year, month, 1).getDay();
       const daysInMonth = new Date(year, month + 1, 0).getDate();
       const daysInPrevMonth = new Date(year, month, 0).getDate();
 
-      // Busca das Contas do Mês Atual no IndexedDB
       const startDateStr = `${year}-${String(month + 1).padStart(2, '0')}-01`;
       const endDateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(daysInMonth).padStart(2, '0')}`;
       
@@ -247,7 +217,6 @@
         .between(startDateStr, endDateStr, true, true)
         .toArray();
 
-      // Cálculo dos Totais do Mês
       let totalPaid = 0;
       let totalPending = 0;
       accounts.forEach(acc => {
@@ -262,14 +231,12 @@
       const today = new Date();
       const isCurrentMonth = today.getFullYear() === year && today.getMonth() === month;
 
-      // 1. Dias do Mês Anterior (para preenchimento)
       for (let i = firstDayOfMonth - 1; i >= 0; i--) {
         const dayNum = daysInPrevMonth - i;
         const cell = createDayCell(dayNum, true);
         calendarGrid.appendChild(cell);
       }
 
-      // 2. Dias do Mês Atual
       for (let day = 1; day <= daysInMonth; day++) {
         const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
         const isToday = isCurrentMonth && today.getDate() === day;
@@ -279,9 +246,8 @@
         calendarGrid.appendChild(cell);
       }
 
-      // 3. Dias do Próximo Mês (completar a grade)
       const totalCells = firstDayOfMonth + daysInMonth;
-      const nextDays = (42 - totalCells) % 7; // Mantém grade uniforme
+      const nextDays = (42 - totalCells) % 7;
       for (let day = 1; day <= nextDays; day++) {
         const cell = createDayCell(day, true);
         calendarGrid.appendChild(cell);
@@ -290,35 +256,30 @@
       updateIcons();
     }
 
-    // Criação dos Blocos dos Dias no Calendário
     function createDayCell(dayNumber, isOtherMonth = false, isToday = false, dateStr = null, dayAccounts = []) {
       const cell = document.createElement('div');
       cell.className = `min-h-[90px] p-1 border-b border-r border-gray-800/40 flex flex-col justify-between ${
-        isOtherMonth ? 'bg-appDark/40 text-gray-600' : 'bg-appDark text-gray-200'
+        isOtherMonth ? 'bg-[#121318]/40 text-gray-600' : 'bg-[#121318] text-gray-200'
       } cursor-pointer hover:bg-gray-800/30 transition relative`;
 
-      // Clique no dia abre o modal para adicionar nova conta naquela data
       if (!isOtherMonth && dateStr) {
         cell.addEventListener('click', (e) => {
-          // Impede abertura do modal do dia ao clicar em uma conta específica
           if (e.target.closest('.account-badge')) return;
           openModalForDate(dateStr);
         });
       }
 
-      // Cabeçalho do dia (Número do Dia)
       const topRow = document.createElement('div');
       topRow.className = 'flex justify-start p-1';
 
       const dayNumSpan = document.createElement('span');
       dayNumSpan.className = `text-xs font-bold w-6 h-6 flex items-center justify-center rounded-full ${
-        isToday ? 'bg-accentBlue text-white shadow-md' : ''
+        isToday ? 'bg-blue-600 text-white shadow-md' : ''
       }`;
       dayNumSpan.textContent = dayNumber;
       topRow.appendChild(dayNumSpan);
       cell.appendChild(topRow);
 
-      // Lista de Contas / Lançamentos
       const badgeContainer = document.createElement('div');
       badgeContainer.className = 'space-y-1 overflow-y-auto max-h-[75px] custom-scrollbar flex-1';
 
@@ -327,15 +288,12 @@
         const isPaid = acc.status === 'paid';
         badge.className = `account-badge text-[10px] font-semibold px-2 py-1 rounded text-white truncate flex items-center justify-between shadow-sm border ${
           isPaid 
-            ? 'bg-paidGreen border-emerald-600 hover:bg-paidGreenHover' 
-            : 'bg-pendingOrange border-amber-600 hover:bg-pendingOrangeHover'
+            ? 'bg-emerald-600 border-emerald-500 hover:bg-emerald-500' 
+            : 'bg-amber-600 border-amber-500 hover:bg-amber-500'
         }`;
         
-        badge.innerHTML = `
-          <span class="truncate">${acc.title}</span>
-        `;
+        badge.innerHTML = `<span class="truncate">${acc.title}</span>`;
 
-        // Clique no badge permite editar a conta existente
         badge.addEventListener('click', (e) => {
           e.stopPropagation();
           openModalForEdit(acc);
@@ -348,7 +306,6 @@
       return cell;
     }
 
-    // Modal - Abertura para Novo Cadastro
     function openModalForDate(dateStr) {
       formAccount.reset();
       document.getElementById('account-id').value = '';
@@ -360,7 +317,6 @@
       modal.classList.add('flex');
     }
 
-    // Modal - Abertura para Edição
     function openModalForEdit(acc) {
       document.getElementById('account-id').value = acc.id;
       document.getElementById('account-title').value = acc.title;
@@ -379,13 +335,11 @@
       modal.classList.add('flex');
     }
 
-    // Modal - Fechamento
     function closeModal() {
       modal.classList.add('hidden');
       modal.classList.remove('flex');
     }
 
-    // Eventos e Submissão do Formulário
     formAccount.addEventListener('submit', async (e) => {
       e.preventDefault();
 
@@ -407,7 +361,6 @@
       renderCalendar();
     });
 
-    // Exclusão de Conta
     btnDeleteAccount.addEventListener('click', async () => {
       const id = document.getElementById('account-id').value;
       if (id && confirm('Deseja realmente excluir esta conta?')) {
@@ -417,7 +370,6 @@
       }
     });
 
-    // Navegação entre Meses
     document.getElementById('btn-prev-month').addEventListener('click', () => {
       currentDate.setMonth(currentDate.getMonth() - 1);
       renderCalendar();
@@ -436,7 +388,6 @@
     document.getElementById('btn-close-modal').addEventListener('click', closeModal);
     document.getElementById('btn-cancel-modal').addEventListener('click', closeModal);
 
-    // Inicialização da Aplicação
     window.addEventListener('DOMContentLoaded', () => {
       setupPWA();
       renderCalendar();
