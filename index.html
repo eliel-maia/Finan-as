@@ -92,13 +92,13 @@
         </div>
 
         <div class="p-4 border-t border-gray-800 text-xs text-center text-gray-500">
-            Agenda Financeira v1.2
+            Agenda Financeira v1.3
         </div>
     </aside>
 
-    <!-- Modal de Relatórios -->
+    <!-- Modal de Relatórios com Categoria -->
     <div id="reportsModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-        <div class="bg-cardBg border border-gray-800 rounded-2xl w-full max-w-md p-6 shadow-2xl relative animate-in fade-in zoom-in duration-200">
+        <div class="bg-cardBg border border-gray-800 rounded-2xl w-full max-w-md p-6 shadow-2xl relative animate-in fade-in zoom-in duration-200 max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-center mb-5 border-b border-gray-800 pb-3">
                 <h2 class="text-lg font-bold text-white flex items-center space-x-2">
                     <i class="fa-solid fa-chart-pie text-indigo-400"></i>
@@ -137,6 +137,14 @@
                     </div>
                     <div class="w-10 h-10 rounded-xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center">
                         <i class="fa-solid fa-wallet text-lg"></i>
+                    </div>
+                </div>
+
+                <!-- Resumo por Categoria -->
+                <div class="pt-2">
+                    <h3 class="text-xs font-semibold text-gray-400 uppercase mb-3">Gastos por Categoria</h3>
+                    <div id="categorySummaryList" class="space-y-2">
+                        <!-- Gerado dinamicamente via JS -->
                     </div>
                 </div>
             </div>
@@ -200,10 +208,23 @@
                             class="w-full bg-[#121212] border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500 text-sm">
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold text-gray-400 uppercase mb-1">Data de Vencimento</label>
+                        <label class="block text-xs font-semibold text-gray-400 uppercase mb-1">Data Vencimento</label>
                         <input type="date" id="dateInput" required 
                             class="w-full bg-[#121212] border border-gray-700 rounded-xl px-3 py-3 text-white focus:outline-none focus:border-indigo-500 text-sm">
                     </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-gray-400 uppercase mb-1">Categoria</label>
+                    <select id="categoryInput" class="w-full bg-[#121212] border border-gray-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500 text-sm">
+                        <option value="Outros">Outros</option>
+                        <option value="Moradia">Moradia / Contas</option>
+                        <option value="Alimentação">Alimentação</option>
+                        <option value="Transporte">Transporte / Cartão</option>
+                        <option value="Saúde">Saúde</option>
+                        <option value="Lazer">Lazer / Assinaturas</option>
+                        <option value="Educação">Educação</option>
+                    </select>
                 </div>
 
                 <div>
