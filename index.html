@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="pt-BR" class="dark">
 <head>
@@ -49,7 +48,6 @@
     <script src="https://unpkg.com/dexie@3/dist/dexie.js"></script>
 
     <style>
-        /* Custom scrollbar for clean dark mode look */
         ::-webkit-scrollbar {
             width: 6px;
             height: 6px;
@@ -63,7 +61,7 @@
         }
     </style>
 </head>
-<body class="bg-darkBg text-gray-100 min-h-screen flex flex-col font-sans select-none">
+<body class="bg-darkBg text-gray-100 min-h-screen flex flex-col font-sans select-none relative">
 
     <!-- Header -->
     <header class="bg-[#18181b] border-b border-gray-800 px-4 py-3 flex items-center justify-between sticky top-0 z-20">
@@ -71,10 +69,11 @@
             <button id="menuBtn" class="text-gray-400 hover:text-white focus:outline-none text-xl p-1">
                 <i class="fa-solid fa-bars"></i>
             </button>
-            <div class="flex items-center space-x-2">
+            <!-- Botão do Seletor de Mês/Ano -->
+            <button id="monthSelectorBtn" class="flex items-center space-x-2 focus:outline-none group py-1 px-2 rounded-lg hover:bg-gray-800 transition-colors">
                 <h1 id="currentMonthYear" class="text-lg font-bold tracking-wide text-white capitalize">Outubro 2026</h1>
-                <i class="fa-solid fa-chevron-down text-xs text-gray-400"></i>
-            </div>
+                <i class="fa-solid fa-chevron-down text-xs text-gray-400 group-hover:text-white transition-transform duration-200" id="chevronIcon"></i>
+            </button>
         </div>
 
         <div class="flex items-center">
@@ -83,6 +82,18 @@
             </button>
         </div>
     </header>
+
+    <!-- Dropdown / Modal de Seleção de Meses -->
+    <div id="monthPickerDropdown" class="absolute top-16 left-4 bg-cardBg border border-gray-700 rounded-2xl shadow-2xl p-4 z-40 hidden w-72 animate-in fade-in zoom-in duration-200">
+        <div class="flex items-center justify-between mb-4 pb-2 border-b border-gray-800">
+            <button id="prevYearBtn" class="text-gray-400 hover:text-white p-2"><i class="fa-solid fa-chevron-left"></i></button>
+            <span id="pickerYearLabel" class="text-base font-bold text-white">2026</span>
+            <button id="nextYearBtn" class="text-gray-400 hover:text-white p-2"><i class="fa-solid fa-chevron-right"></i></button>
+        </div>
+        <div class="grid grid-cols-3 gap-2" id="monthsGrid">
+            <!-- Gerado via JS -->
+        </div>
+    </div>
 
     <!-- Sub-header: Days of the week -->
     <div class="grid grid-cols-7 bg-[#18181b] border-b border-gray-800 text-center text-xs font-medium text-gray-400 py-2 sticky top-[57px] z-20">
@@ -167,21 +178,19 @@
 
     <!-- Application Script -->
     <script>
-        // 1. Configuração do Banco de Dados Local com Dexie.js
         const db = new Dexie('FinanceAgendaDB');
         db.version(1).stores({
             transactions: '++id, name, amount, date, status'
         });
 
-        // Estado atual do calendário (Exemplo padrão Outubro 2026)
-        let currentDate = new Date(2026, 9, 1); // Mês 9 = Outubro
+        let currentDate = new Date(2026, 9, 1); // Outubro 2026
+        let pickerYear = currentDate.getFullYear();
 
         const monthNames = [
-            "Janeiro", "Fevereiro", "Março", "Abril", "Maior", "Junho", 
+            "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", 
             "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
         ];
 
-        // Elementos DOM
         const calendarGrid = document.getElementById('calendarGrid');
         const currentMonthYearEl = document.getElementById('currentMonthYear');
         const openModalBtn = document.getElementById('openModalBtn');
@@ -190,15 +199,17 @@
         const transactionForm = document.getElementById('transactionForm');
         const deleteBtn = document.getElementById('deleteBtn');
         const modalTitle = document.getElementById('modalTitle');
+        const monthSelectorBtn = document.getElementById('monthSelectorBtn');
+        const monthPickerDropdown = document.getElementById('monthPickerDropdown');
+        const pickerYearLabel = document.getElementById('pickerYearLabel');
+        const monthsGrid = document.getElementById('monthsGrid');
 
-        // Inicialização
         document.addEventListener('DOMContentLoaded', async () => {
             await seedInitialDataIfNeeded();
             renderCalendar();
             registerServiceWorker();
         });
 
-        // Popular dados iniciais se o banco estiver vazio (Para espelhar a sua imagem de exemplo)
         async function seedInitialDataIfNeeded() {
             const count = await db.transactions.count();
             if (count === 0) {
@@ -222,7 +233,6 @@
             }
         }
 
-        // Renderização do Calendário Estilo Grade Mensal
         async function renderCalendar() {
             calendarGrid.innerHTML = '';
             
@@ -231,12 +241,10 @@
 
             currentMonthYearEl.textContent = `${monthNames[month]} ${year}`;
 
-            // Primeiro dia do mês e total de dias
             const firstDayIndex = new Date(year, month, 1).getDay();
             const totalDays = new Date(year, month + 1, 0).getDate();
             const prevTotalDays = new Date(year, month, 0).getDate();
 
-            // Buscar transações deste mês no IndexedDB
             const startDateStr = `${year}-${String(month + 1).padStart(2, '0')}-01`;
             const endDateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(totalDays).padStart(2, '0')}`;
             
@@ -245,7 +253,6 @@
                 .between(startDateStr, endDateStr + '\uffff', true, true)
                 .toArray();
 
-            // Organizar transações por dia
             const txByDay = {};
             transactions.forEach(tx => {
                 const dayNum = parseInt(tx.date.split('-')[2], 10);
@@ -255,7 +262,6 @@
 
             let cellsHTML = '';
 
-            // Dias do mês anterior (preenchimento da grade)
             for (let i = firstDayIndex; i > 0; i--) {
                 const dayNum = prevTotalDays - i + 1;
                 cellsHTML += `
@@ -265,7 +271,6 @@
                 `;
             }
 
-            // Dias do mês atual
             const today = new Date();
             for (let day = 1; day <= totalDays; day++) {
                 const isToday = today.getDate() === day && today.getMonth() === month && today.getFullYear() === year;
@@ -296,6 +301,59 @@
             calendarGrid.innerHTML = cellsHTML;
         }
 
+        // Lógica do Seletor de Meses
+        function renderMonthPicker() {
+            pickerYearLabel.textContent = pickerYear;
+            monthsGrid.innerHTML = '';
+            
+            const currentSelectedMonth = currentDate.getMonth();
+            const currentSelectedYear = currentDate.getFullYear();
+
+            monthNames.forEach((m, index) => {
+                const isSelected = index === currentSelectedMonth && pickerYear === currentSelectedYear;
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = `py-2 text-xs font-semibold rounded-xl transition-colors ${
+                    isSelected 
+                        ? 'bg-indigo-600 text-white shadow-md' 
+                        : 'bg-[#121212] text-gray-300 hover:bg-gray-800'
+                }`;
+                btn.textContent = m.substring(0, 3);
+                btn.addEventListener('click', () => {
+                    currentDate = new Date(pickerYear, index, 1);
+                    monthPickerDropdown.classList.add('hidden');
+                    renderCalendar();
+                });
+                monthsGrid.appendChild(btn);
+            });
+        }
+
+        monthSelectorBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            pickerYear = currentDate.getFullYear();
+            renderMonthPicker();
+            monthPickerDropdown.classList.toggle('hidden');
+        });
+
+        document.getElementById('prevYearBtn').addEventListener('click', (e) => {
+            e.stopPropagation();
+            pickerYear--;
+            renderMonthPicker();
+        });
+
+        document.getElementById('nextYearBtn').addEventListener('click', (e) => {
+            e.stopPropagation();
+            pickerYear++;
+            renderMonthPicker();
+        });
+
+        // Fechar dropdown ao clicar fora
+        document.addEventListener('click', (e) => {
+            if (!monthPickerDropdown.contains(e.target) && !monthSelectorBtn.contains(e.target)) {
+                monthPickerDropdown.classList.add('hidden');
+            }
+        });
+
         // Controle do Modal
         function openAddModalForDate(day) {
             const year = currentDate.getFullYear();
@@ -314,7 +372,7 @@
         }
 
         openModalBtn.addEventListener('click', () => {
-            const todayStr = new Date().toISOString().split('T')[0];
+            const todayStr = currentDate.toISOString().split('T')[0];
             document.getElementById('transactionId').value = '';
             document.getElementById('nameInput').value = '';
             document.getElementById('amountInput').value = '';
@@ -330,7 +388,6 @@
             transactionModal.classList.add('hidden');
         });
 
-        // Abrir para edição
         window.openEditModal = async function(id) {
             event.stopPropagation();
             const tx = await db.transactions.get(id);
@@ -347,7 +404,6 @@
             transactionModal.classList.remove('hidden');
         };
 
-        // Salvar Transação (Criar ou Atualizar)
         transactionForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const id = document.getElementById('transactionId').value;
@@ -366,7 +422,6 @@
             renderCalendar();
         });
 
-        // Excluir Transação
         deleteBtn.addEventListener('click', async () => {
             const id = document.getElementById('transactionId').value;
             if (id && confirm('Deseja realmente excluir esta conta?')) {
@@ -378,11 +433,10 @@
 
         // Botão Hoje
         document.getElementById('todayBtn').addEventListener('click', () => {
-            currentDate = new Date(2026, 9, 1); // Voltando para Outubro 2026 conforme o exemplo da imagem
+            currentDate = new Date();
             renderCalendar();
         });
 
-        // Registro de Service Worker para PWA funcionar no Cloudflare Pages
         function registerServiceWorker() {
             if ('serviceWorker' in navigator) {
                 const swCode = `
