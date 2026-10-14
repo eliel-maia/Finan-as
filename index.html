@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="pt-BR" class="dark">
 <head>
@@ -74,6 +75,12 @@
                 <h1 id="currentMonthYear" class="text-lg font-bold tracking-wide text-white capitalize">Outubro 2026</h1>
                 <i class="fa-solid fa-chevron-down text-xs text-gray-400"></i>
             </div>
+        </div>
+
+        <div class="flex items-center">
+            <button id="todayBtn" class="border border-gray-700 rounded px-3 py-1 text-xs font-semibold text-gray-300 hover:bg-gray-800 transition-colors">
+                Hoje
+            </button>
         </div>
     </header>
 
@@ -166,11 +173,11 @@
             transactions: '++id, name, amount, date, status'
         });
 
-        // Estado atual do calendário (Outubro 2026 conforme exemplo)
+        // Estado atual do calendário (Exemplo padrão Outubro 2026)
         let currentDate = new Date(2026, 9, 1); // Mês 9 = Outubro
 
         const monthNames = [
-            "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", 
+            "Janeiro", "Fevereiro", "Março", "Abril", "Maior", "Junho", 
             "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
         ];
 
@@ -191,7 +198,7 @@
             registerServiceWorker();
         });
 
-        // Popular dados iniciais se o banco estiver vazio
+        // Popular dados iniciais se o banco estiver vazio (Para espelhar a sua imagem de exemplo)
         async function seedInitialDataIfNeeded() {
             const count = await db.transactions.count();
             if (count === 0) {
@@ -224,10 +231,12 @@
 
             currentMonthYearEl.textContent = `${monthNames[month]} ${year}`;
 
+            // Primeiro dia do mês e total de dias
             const firstDayIndex = new Date(year, month, 1).getDay();
             const totalDays = new Date(year, month + 1, 0).getDate();
             const prevTotalDays = new Date(year, month, 0).getDate();
 
+            // Buscar transações deste mês no IndexedDB
             const startDateStr = `${year}-${String(month + 1).padStart(2, '0')}-01`;
             const endDateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(totalDays).padStart(2, '0')}`;
             
@@ -236,6 +245,7 @@
                 .between(startDateStr, endDateStr + '\uffff', true, true)
                 .toArray();
 
+            // Organizar transações por dia
             const txByDay = {};
             transactions.forEach(tx => {
                 const dayNum = parseInt(tx.date.split('-')[2], 10);
@@ -245,6 +255,7 @@
 
             let cellsHTML = '';
 
+            // Dias do mês anterior (preenchimento da grade)
             for (let i = firstDayIndex; i > 0; i--) {
                 const dayNum = prevTotalDays - i + 1;
                 cellsHTML += `
@@ -254,6 +265,7 @@
                 `;
             }
 
+            // Dias do mês atual
             const today = new Date();
             for (let day = 1; day <= totalDays; day++) {
                 const isToday = today.getDate() === day && today.getMonth() === month && today.getFullYear() === year;
@@ -318,6 +330,7 @@
             transactionModal.classList.add('hidden');
         });
 
+        // Abrir para edição
         window.openEditModal = async function(id) {
             event.stopPropagation();
             const tx = await db.transactions.get(id);
@@ -334,6 +347,7 @@
             transactionModal.classList.remove('hidden');
         };
 
+        // Salvar Transação (Criar ou Atualizar)
         transactionForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const id = document.getElementById('transactionId').value;
@@ -352,6 +366,7 @@
             renderCalendar();
         });
 
+        // Excluir Transação
         deleteBtn.addEventListener('click', async () => {
             const id = document.getElementById('transactionId').value;
             if (id && confirm('Deseja realmente excluir esta conta?')) {
@@ -361,6 +376,13 @@
             }
         });
 
+        // Botão Hoje
+        document.getElementById('todayBtn').addEventListener('click', () => {
+            currentDate = new Date(2026, 9, 1); // Voltando para Outubro 2026 conforme o exemplo da imagem
+            renderCalendar();
+        });
+
+        // Registro de Service Worker para PWA funcionar no Cloudflare Pages
         function registerServiceWorker() {
             if ('serviceWorker' in navigator) {
                 const swCode = `
