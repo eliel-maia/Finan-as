@@ -197,7 +197,7 @@
 
     <!-- Modal de Cadastro / Edição -->
     <div id="transactionModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-        <div class="bg-cardBg border border-gray-800 rounded-2xl w-full max-w-md p-6 shadow-2xl relative animate-in fade-in zoom-in duration-200">
+        <div class="bg-cardBg border border-gray-800 rounded-2xl w-full max-w-md p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-center mb-5">
                 <h2 id="modalTitle" class="text-lg font-bold text-white">Nova Conta</h2>
                 <button id="closeModalBtn" class="text-gray-400 hover:text-white p-1">
@@ -238,6 +238,28 @@
                             <input type="radio" name="status" value="paid" class="text-paidGreen focus:ring-0">
                             <span class="text-sm font-medium text-emerald-500">Pago</span>
                         </label>
+                    </div>
+                </div>
+
+                <!-- Seção de Recorrência (Parcelas / Fixo) -->
+                <div id="recurrenceSection" class="bg-[#121212] border border-gray-800 rounded-xl p-4 space-y-3">
+                    <label class="block text-xs font-semibold text-gray-400 uppercase">Repetição / Recorrência</label>
+                    <div class="grid grid-cols-2 gap-3">
+                        <label class="border border-gray-700 rounded-xl p-2.5 flex items-center justify-center space-x-2 cursor-pointer hover:border-gray-500 has-[:checked]:border-indigo-500 has-[:checked]:bg-indigo-500/10">
+                            <input type="radio" name="recurrenceType" value="single" checked class="text-indigo-600 focus:ring-0">
+                            <span class="text-xs font-medium text-gray-300">Apenas este mês</span>
+                        </label>
+                        <label class="border border-gray-700 rounded-xl p-2.5 flex items-center justify-center space-x-2 cursor-pointer hover:border-gray-500 has-[:checked]:border-indigo-500 has-[:checked]:bg-indigo-500/10">
+                            <input type="radio" name="recurrenceType" value="multiple" class="text-indigo-600 focus:ring-0">
+                            <span class="text-xs font-medium text-gray-300">Repetir / Parcelar</span>
+                        </label>
+                    </div>
+
+                    <div id="installmentsContainer" class="hidden pt-2">
+                        <label class="block text-xs font-semibold text-gray-400 uppercase mb-1">Quantidade de Meses (Preencher)</label>
+                        <input type="number" id="installmentsInput" min="2" max="60" value="12" 
+                            class="w-full bg-cardBg border border-gray-700 rounded-xl px-4 py-2.5 text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500 text-sm">
+                        <p class="text-[11px] text-gray-500 mt-1">Vai clonar esta conta para o mesmo dia nos próximos meses informados.</p>
                     </div>
                 </div>
 
@@ -289,6 +311,21 @@
         const menuReportsBtn = document.getElementById('menuReportsBtn');
         const reportsModal = document.getElementById('reportsModal');
         const closeReportsBtn = document.getElementById('closeReportsBtn');
+
+        // Elementos de Recorrência
+        const recurrenceSection = document.getElementById('recurrenceSection');
+        const installmentsContainer = document.getElementById('installmentsContainer');
+        const recurrenceRadios = document.querySelectorAll('input[name="recurrenceType"]');
+
+        recurrenceRadios.forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                if (e.target.value === 'multiple') {
+                    installmentsContainer.classList.remove('hidden');
+                } else {
+                    installmentsContainer.classList.add('hidden');
+                }
+            });
+        });
 
         document.addEventListener('DOMContentLoaded', async () => {
             await seedInitialDataIfNeeded();
@@ -387,7 +424,7 @@
             calendarGrid.innerHTML = cellsHTML;
         }
 
-        // Lógica do Menu Lateral (Drawer)
+        // Lógica do Menu Lateral
         function toggleSidebar() {
             const isOpen = !sidebar.classList.contains('-translate-x-full');
             if (isOpen) {
@@ -509,6 +546,11 @@
             document.getElementById('dateInput').value = `${year}-${month}-${dayStr}`;
             document.querySelector('input[name="status"][value="pending"]').checked = true;
             
+            // Ocultar campo de ID / Exibir seção de recorrência para novos cadastros
+            recurrenceSection.classList.remove('hidden');
+            document.querySelector('input[name="recurrenceType"][value="single"]').checked = true;
+            installmentsContainer.classList.add('hidden');
+
             modalTitle.textContent = 'Nova Conta';
             deleteBtn.classList.add('hidden');
             transactionModal.classList.remove('hidden');
@@ -522,6 +564,10 @@
             document.getElementById('dateInput').value = todayStr;
             document.querySelector('input[name="status"][value="pending"]').checked = true;
             
+            recurrenceSection.classList.remove('hidden');
+            document.querySelector('input[name="recurrenceType"][value="single"]').checked = true;
+            installmentsContainer.classList.add('hidden');
+
             modalTitle.textContent = 'Nova Conta';
             deleteBtn.classList.add('hidden');
             transactionModal.classList.remove('hidden');
@@ -542,23 +588,64 @@
             document.getElementById('dateInput').value = tx.date;
             document.querySelector(`input[name="status"][value="${tx.status}"]`).checked = true;
 
+            // Na edição, ocultamos a recorrência para focar apenas na alteração daquele registro específico
+            recurrenceSection.classList.add('hidden');
+
             modalTitle.textContent = 'Editar Conta';
             deleteBtn.classList.remove('hidden');
             transactionModal.classList.remove('hidden');
         };
 
+        // Salvar Transação com Suporte a Recorrência (Múltiplos Meses)
         transactionForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const id = document.getElementById('transactionId').value;
             const name = document.getElementById('nameInput').value;
             const amount = parseFloat(document.getElementById('amountInput').value);
-            const date = document.getElementById('dateInput').value;
+            const baseDateStr = document.getElementById('dateInput').value;
             const status = document.querySelector('input[name="status"]:checked').value;
 
             if (id) {
-                await db.transactions.update(parseInt(id), { name, amount, date, status });
+                // Atualizar apenas o item existente
+                await db.transactions.update(parseInt(id), { name, amount, date: baseDateStr, status });
             } else {
-                await db.transactions.add({ name, amount, date, status });
+                const recurrenceType = document.querySelector('input[name="recurrenceType"]:checked').value;
+                
+                if (recurrenceType === 'multiple') {
+                    const totalMonths = parseInt(document.getElementById('installmentsInput').value) || 12;
+                    const [baseYear, baseMonth, baseDay] = baseDateStr.split('-').map(Number);
+                    
+                    const newTransactions = [];
+                    for (let i = 0; i < totalMonths; i++) {
+                        let targetYear = baseYear;
+                        let targetMonth = baseMonth + i;
+                        
+                        while (targetMonth > 12) {
+                            targetMonth -= 12;
+                            targetYear += 1;
+                        }
+
+                        // Ajuste seguro para dias que não existem em alguns meses (ex: dia 31)
+                        const lastDayOfTargetMonth = new Date(targetYear, targetMonth, 0).getDate();
+                        const targetDay = Math.min(baseDay, lastDayOfTargetMonth);
+
+                        const formattedDate = `${targetYear}-${String(targetMonth).padStart(2, '0')}-${String(targetDay).padStart(2, '0')}`;
+                        
+                        // O primeiro mês mantém o status escolhido, os seguintes entram como pendentes por segurança (ou você pode ajustar)
+                        const itemStatus = (i === 0) ? status : 'pending';
+
+                        newTransactions.push({
+                            name: name,
+                            amount: amount,
+                            date: formattedDate,
+                            status: itemStatus
+                        });
+                    }
+                    await db.transactions.bulkAdd(newTransactions);
+                } else {
+                    // Apenas 1 registro
+                    await db.transactions.add({ name, amount, date: baseDateStr, status });
+                }
             }
 
             transactionModal.classList.add('hidden');
