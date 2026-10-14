@@ -1,6 +1,6 @@
 const db = new Dexie('FinanceAgendaDB');
-db.version(1).stores({
-    transactions: '++id, name, amount, date, status'
+db.version(2).stores({
+    transactions: '++id, name, amount, date, status, category'
 });
 
 let currentDate = new Date(2026, 9, 1); // Outubro 2026
@@ -87,20 +87,20 @@ async function seedInitialDataIfNeeded() {
     const count = await db.transactions.count();
     if (count === 0) {
         const sampleData = [
-            { name: 'Nubank', amount: 350.00, date: '2026-10-27', status: 'paid' },
-            { name: 'Celular', amount: 69.90, date: '2026-10-01', status: 'pending' },
-            { name: 'RecargaP', amount: 30.00, date: '2026-10-01', status: 'paid' },
-            { name: 'Jejum', amount: 0, date: '2026-10-04', status: 'pending' },
-            { name: 'Ipanema', amount: 120.00, date: '2026-10-08', status: 'paid' },
-            { name: 'Itaú', amount: 450.00, date: '2026-10-08', status: 'paid' },
-            { name: 'Caixa', amount: 800.00, date: '2026-10-10', status: 'paid' },
-            { name: 'Faculdade', amount: 650.00, date: '2026-10-10', status: 'paid' },
-            { name: 'Terreno', amount: 500.00, date: '2026-10-10', status: 'pending' },
-            { name: 'Google One', amount: 14.99, date: '2026-10-12', status: 'paid' },
-            { name: 'Água / Luz', amount: 210.50, date: '2026-10-13', status: 'paid' },
-            { name: 'Bradesco', amount: 320.00, date: '2026-10-13', status: 'paid' },
-            { name: 'Netflix', amount: 55.90, date: '2026-10-13', status: 'paid' },
-            { name: 'Nubank', amount: 420.00, date: '2026-10-27', status: 'pending' }
+            { name: 'Nubank', amount: 350.00, date: '2026-10-27', status: 'paid', category: 'Transporte' },
+            { name: 'Celular', amount: 69.90, date: '2026-10-01', status: 'pending', category: 'Lazer' },
+            { name: 'RecargaP', amount: 30.00, date: '2026-10-01', status: 'paid', category: 'Transporte' },
+            { name: 'Jejum', amount: 0, date: '2026-10-04', status: 'pending', category: 'Outros' },
+            { name: 'Ipanema', amount: 120.00, date: '2026-10-08', status: 'paid', category: 'Outros' },
+            { name: 'Itaú', amount: 450.00, date: '2026-10-08', status: 'paid', category: 'Transporte' },
+            { name: 'Caixa', amount: 800.00, date: '2026-10-10', status: 'paid', category: 'Moradia' },
+            { name: 'Faculdade', amount: 650.00, date: '2026-10-10', status: 'paid', category: 'Educação' },
+            { name: 'Terreno', amount: 500.00, date: '2026-10-10', status: 'pending', category: 'Moradia' },
+            { name: 'Google One', amount: 14.99, date: '2026-10-12', status: 'paid', category: 'Lazer' },
+            { name: 'Água / Luz', amount: 210.50, date: '2026-10-13', status: 'paid', category: 'Moradia' },
+            { name: 'Bradesco', amount: 320.00, date: '2026-10-13', status: 'paid', category: 'Transporte' },
+            { name: 'Netflix', amount: 55.90, date: '2026-10-13', status: 'paid', category: 'Lazer' },
+            { name: 'Nubank', amount: 420.00, date: '2026-10-27', status: 'pending', category: 'Transporte' }
         ];
         await db.transactions.bulkAdd(sampleData);
     }
@@ -138,7 +138,7 @@ async function renderCalendar() {
     for (let i = firstDayIndex; i > 0; i--) {
         const dayNum = prevTotalDays - i + 1;
         cellsHTML += `
-            <div class="border-b border-r border-gray-800/60 p-1 min-h-[100px] bg-[#121212]/40 opacity-40">
+            <div class="border-b border-r border-gray-800/60 p-1 min-h-[95px] bg-[#121212]/40 opacity-40">
                 <span class="text-xs text-gray-500 font-semibold px-1">${dayNum}</span>
             </div>
         `;
@@ -153,18 +153,18 @@ async function renderCalendar() {
         dayTxs.forEach(tx => {
             const bgClass = tx.status === 'paid' ? 'bg-paidGreen/90 text-white' : 'bg-pendingOrange/90 text-white';
             txBadges += `
-                <div onclick="openEditModal(${tx.id})" class="${bgClass} text-[11px] font-medium px-1.5 py-0.5 rounded mb-1 truncate cursor-pointer shadow-sm hover:opacity-80 transition-opacity flex items-center justify-between">
+                <div onclick="openEditModal(${tx.id})" class="${bgClass} text-[10px] font-medium px-1 py-0.5 rounded mb-0.5 truncate cursor-pointer shadow-sm hover:opacity-80 transition-opacity flex items-center justify-between leading-tight">
                     <span class="truncate">${tx.name}</span>
                 </div>
             `;
         });
 
         cellsHTML += `
-            <div onclick="openAddModalForDate(${day})" class="border-b border-r border-gray-800 p-1 min-h-[105px] bg-darkBg hover:bg-[#1a1a1a] transition-colors cursor-pointer flex flex-col">
-                <div class="flex items-center justify-between mb-1">
-                    <span class="text-xs font-bold px-1.5 py-0.5 rounded-full ${isToday ? 'bg-blue-600 text-white' : 'text-gray-400'}">${day}</span>
+            <div onclick="openAddModalForDate(${day})" class="border-b border-r border-gray-800 p-1 min-h-[100px] bg-darkBg hover:bg-[#1a1a1a] transition-colors cursor-pointer flex flex-col">
+                <div class="flex items-center justify-between mb-0.5">
+                    <span class="text-xs font-bold px-1.5 py-0.2 rounded-full ${isToday ? 'bg-blue-600 text-white' : 'text-gray-400'}">${day}</span>
                 </div>
-                <div class="flex-1 overflow-y-auto space-y-1">
+                <div class="flex-1 overflow-y-auto space-y-0.5">
                     ${txBadges}
                 </div>
             </div>
@@ -206,14 +206,19 @@ async function openReports() {
 
     let paidSum = 0;
     let pendingSum = 0;
+    const catTotals = {};
 
     transactions.forEach(tx => {
         const amount = parseFloat(tx.amount) || 0;
+        const cat = tx.category || 'Outros';
+
         if (tx.status === 'paid') {
             paidSum += amount;
         } else {
             pendingSum += amount;
         }
+
+        catTotals[cat] = (catTotals[cat] || 0) + amount;
     });
 
     const totalSum = paidSum + pendingSum;
@@ -221,6 +226,32 @@ async function openReports() {
     document.getElementById('reportPaid').textContent = `R$ ${paidSum.toFixed(2)}`;
     document.getElementById('reportPending').textContent = `R$ ${pendingSum.toFixed(2)}`;
     document.getElementById('reportTotal').textContent = `R$ ${totalSum.toFixed(2)}`;
+
+    // Renderizar gráfico/barras por categoria
+    const categorySummaryList = document.getElementById('categorySummaryList');
+    categorySummaryList.innerHTML = '';
+
+    const categories = Object.keys(catTotals).sort((a, b) => catTotals[b] - catTotals[a]);
+
+    if (categories.length === 0) {
+        categorySummaryList.innerHTML = '<p class="text-xs text-gray-500 italic">Nenhum lançamento no mês.</p>';
+    } else {
+        categories.forEach(cat => {
+            const val = catTotals[cat];
+            const pct = totalSum > 0 ? Math.round((val / totalSum) * 100) : 0;
+            categorySummaryList.innerHTML += `
+                <div class="bg-[#121212] border border-gray-800 rounded-xl p-3">
+                    <div class="flex justify-between items-center text-xs font-semibold mb-1">
+                        <span class="text-gray-300">${cat}</span>
+                        <span class="text-white">R$ ${val.toFixed(2)} (${pct}%)</span>
+                    </div>
+                    <div class="w-full bg-gray-800 h-2 rounded-full overflow-hidden">
+                        <div class="bg-indigo-500 h-full rounded-full transition-all duration-300" style="width: ${pct}%"></div>
+                    </div>
+                </div>
+            `;
+        });
+    }
 
     reportsModal.classList.remove('hidden');
 }
@@ -327,6 +358,7 @@ function openAddModalForDate(day) {
     document.getElementById('transactionId').value = '';
     document.getElementById('nameInput').value = '';
     document.getElementById('amountInput').value = '';
+    document.getElementById('categoryInput').value = 'Outros';
     document.getElementById('dateInput').value = `${year}-${month}-${dayStr}`;
     document.querySelector('input[name="status"][value="pending"]').checked = true;
     
@@ -344,6 +376,7 @@ openModalBtn.addEventListener('click', () => {
     document.getElementById('transactionId').value = '';
     document.getElementById('nameInput').value = '';
     document.getElementById('amountInput').value = '';
+    document.getElementById('categoryInput').value = 'Outros';
     document.getElementById('dateInput').value = todayStr;
     document.querySelector('input[name="status"][value="pending"]').checked = true;
     
@@ -368,6 +401,7 @@ window.openEditModal = async function(id) {
     document.getElementById('transactionId').value = tx.id;
     document.getElementById('nameInput').value = tx.name;
     document.getElementById('amountInput').value = tx.amount;
+    document.getElementById('categoryInput').value = tx.category || 'Outros';
     document.getElementById('dateInput').value = tx.date;
     document.querySelector(`input[name="status"][value="${tx.status}"]`).checked = true;
 
@@ -383,11 +417,12 @@ transactionForm.addEventListener('submit', async (e) => {
     const id = document.getElementById('transactionId').value;
     const name = document.getElementById('nameInput').value;
     const amount = parseFloat(document.getElementById('amountInput').value);
+    const category = document.getElementById('categoryInput').value;
     const baseDateStr = document.getElementById('dateInput').value;
     const status = document.querySelector('input[name="status"]:checked').value;
 
     if (id) {
-        await db.transactions.update(parseInt(id), { name, amount, date: baseDateStr, status });
+        await db.transactions.update(parseInt(id), { name, amount, category, date: baseDateStr, status });
     } else {
         const recurrenceType = document.querySelector('input[name="recurrenceType"]:checked').value;
         
@@ -414,13 +449,14 @@ transactionForm.addEventListener('submit', async (e) => {
                 newTransactions.push({
                     name: name,
                     amount: amount,
+                    category: category,
                     date: formattedDate,
                     status: itemStatus
                 });
             }
             await db.transactions.bulkAdd(newTransactions);
         } else {
-            await db.transactions.add({ name, amount, date: baseDateStr, status });
+            await db.transactions.add({ name, amount, category, date: baseDateStr, status });
         }
     }
 
