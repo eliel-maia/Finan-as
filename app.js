@@ -280,7 +280,6 @@ async function openReports() {
         catTotals[cat] = (catTotals[cat] || 0) + amount;
     });
 
-    // Atualizar valores nos cards e no centro do gráfico
     document.getElementById('reportPaid').textContent = `R$ ${paidSum.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     document.getElementById('reportPending').textContent = `R$ ${pendingSum.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     document.getElementById('reportTotal').textContent = `R$ ${totalSum.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
