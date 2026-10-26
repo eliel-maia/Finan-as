@@ -297,21 +297,7 @@ async function openReports() {
     document.getElementById('reportPending').textContent = `R$ ${pendingSum.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     document.getElementById('reportTotal').textContent = `R$ ${totalSum.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-    // Renderizar resumo semanal com segurança
-    const weeklySummaryList = document.getElementById('weeklySummaryList');
-    if (weeklySummaryList) {
-        weeklySummaryList.innerHTML = '';
-        Object.keys(weeklyTotals).forEach(weekName => {
-            const val = weeklyTotals[weekName];
-            weeklySummaryList.innerHTML += `
-                <div class="bg-[#121212] border border-gray-800 rounded-xl px-3 py-2.5 flex items-center justify-between text-xs">
-                    <span class="text-gray-300 font-medium">${weekName}</span>
-                    <span class="text-white font-bold">R$ ${val.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                </div>
-            `;
-        });
-    }
-
+    // Renderizar resumo por categorias
     const categorySummaryList = document.getElementById('categorySummaryList');
     categorySummaryList.innerHTML = '';
 
@@ -348,6 +334,21 @@ async function openReports() {
         });
 
         donutChart.style.background = `conic-gradient(${gradientStops.join(', ')})`;
+    }
+
+    // Renderizar resumo por semana abaixo das categorias
+    const weeklySummaryList = document.getElementById('weeklySummaryList');
+    if (weeklySummaryList) {
+        weeklySummaryList.innerHTML = '';
+        Object.keys(weeklyTotals).forEach(weekName => {
+            const val = weeklyTotals[weekName];
+            weeklySummaryList.innerHTML += `
+                <div class="bg-[#121212] border border-gray-800 rounded-xl px-3 py-2.5 flex items-center justify-between text-xs">
+                    <span class="text-gray-300 font-medium">${weekName}</span>
+                    <span class="text-white font-bold">R$ ${val.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                </div>
+            `;
+        });
     }
 
     reportsModal.classList.remove('hidden');
@@ -515,7 +516,7 @@ transactionForm.addEventListener('submit', async (e) => {
     const name = document.getElementById('nameInput').value;
     const rawAmount = document.getElementById('amountInput').value;
     const amount = parseCurrency(rawAmount);
-    const category = document.getElementById('categoryInput5'] || document.getElementById('categoryInput').value;
+    const category = document.getElementById('categoryInput').value;
     const baseDateStr = document.getElementById('dateInput').value;
     const status = document.querySelector('input[name="status"]:checked').value;
 
