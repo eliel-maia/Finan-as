@@ -265,10 +265,13 @@ async function openReports() {
     let paidSum = 0;
     let pendingSum = 0;
     const catTotals = {};
+    const weeklyTotals = { "Semana 1 (Dias 1 a 7)": 0, "Semana 2 (Dias 8 a 14)": 0, "Semana 3 (Dias 15 a 21)": 0, "Semana 4 (Dias 22 a 31)": 0 };
 
     transactions.forEach(tx => {
         const amount = parseFloat(tx.amount) || 0;
         const cat = tx.category || 'Outros';
+        const dayNum = parseInt(tx.date.split('-')[2], 10);
+
         totalSum += amount;
 
         if (tx.status === 'paid') {
@@ -278,11 +281,31 @@ async function openReports() {
         }
 
         catTotals[cat] = (catTotals[cat] || 0) + amount;
+
+        // Divisão por semanas do mês
+        if (dayNum >= 1 && dayNum <= 7) weeklyTotals["Semana 1 (Dias 1 a 7)"] += amount;
+        else if (dayNum >= 8 && dayNum <= 14) weeklyTotals["Semana 2 (Dias 8 a 14)"] += amount;
+        else if (dayNum >= 15 && dayNum <= 21) weeklyTotals["Semana 3 (Dias 15 a 21)"] += amount;
+        else weeklyTotals["Semana 4 (Dias 22 a 31)"] += amount;
     });
 
+    // Atualizar valores nos cards e no centro do gráfico
     document.getElementById('reportPaid').textContent = `R$ ${paidSum.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     document.getElementById('reportPending').textContent = `R$ ${pendingSum.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     document.getElementById('reportTotal').textContent = `R$ ${totalSum.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+    // Renderizar resumo semanal
+    const weeklySummaryList = document.getElementById('weeklySummaryList');
+    weeklySummaryList.innerHTML = '';
+    Object.keys(weeklyTotals).forEach(weekName => {
+        const val = weeklyTotals[weekName];
+        weeklySummaryList.innerHTML += `
+            <div class="bg-[#121212] border border-gray-800 rounded-xl px-3 py-2.5 flex items-center justify-between text-xs">
+                <span class="text-gray-300 font-medium">${weekName}</span>
+                <span class="text-white font-bold">R$ ${val.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+            </div>
+        `;
+    });
 
     const categorySummaryList = document.getElementById('categorySummaryList');
     categorySummaryList.innerHTML = '';
