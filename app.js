@@ -265,18 +265,13 @@ async function openReports() {
     let paidSum = 0;
     let pendingSum = 0;
     const catTotals = {};
-    const weeklyTotals = { 
-        "Semana 1 (Dias 1 a 7)": 0, 
-        "Semana 2 (Dias 8 a 14)": 0, 
-        "Semana 3 (Dias 15 a 21)": 0, 
-        "Semana 4 (Dias 22+)": 0 
-    };
+    
+    // Objeto para armazenar as semanas dinâmicas com base no domingo
+    const weeklyTotals = {};
 
     transactions.forEach(tx => {
         const amount = parseFloat(tx.amount) || 0;
         const cat = tx.category || 'Outros';
-        const dayNum = parseInt(tx.date.split('-')[2], 10);
-
         totalSum += amount;
 
         if (tx.status === 'paid') {
@@ -287,10 +282,23 @@ async function openReports() {
 
         catTotals[cat] = (catTotals[cat] || 0) + amount;
 
-        if (dayNum >= 1 && dayNum <= 7) weeklyTotals["Semana 1 (Dias 1 a 7)"] += amount;
-        else if (dayNum >= 8 && dayNum <= 14) weeklyTotals["Semana 2 (Dias 8 a 14)"] += amount;
-        else if (dayNum >= 15 && dayNum <= 21) weeklyTotals["Semana 3 (Dias 15 a 21)"] += amount;
-        else weeklyTotals["Semana 4 (Dias 22+)"] += amount;
+        // Calcular a semana exata baseada no dia (Domingo como início da semana)
+        const [tYear, tMonth, tDay] = tx.date.split('-').map(Number);
+        const txDateObj = new Date(tYear, tMonth - 1, tDay);
+        
+        // Encontrar o domingo correspondente daquela semana para nomear o intervalo
+        const dayOfWeek = txDateObj.getDay(); // 0 = Domingo, 1 = Segunda ... 6 = Sábado
+        const sundayDate = new Date(txDateObj);
+        sundayDate.setDate(txDateObj.getDate() - dayOfWeek);
+        
+        const saturdayDate = new Date(sundayDate);
+        saturdayDate.setDate(sundayDate.getDate() + 6);
+
+        // Formatar rótulo da semana (Ex: "04/10 a 10/10")
+        const formatDateStr = (d) => `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`;
+        const weekLabel = `Semana (${formatDateStr(sundayDate)} a ${formatDateStr(saturdayDate)})`;
+
+        weeklyTotals[weekLabel] = (weeklyTotals[weekLabel] || 0) + amount;
     });
 
     document.getElementById('reportPaid').textContent = `R$ ${paidSum.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -336,19 +344,25 @@ async function openReports() {
         donutChart.style.background = `conic-gradient(${gradientStops.join(', ')})`;
     }
 
-    // Renderizar resumo por semana abaixo das categorias
+    // Renderizar resumo por semana (iniciando no domingo) abaixo das categorias
     const weeklySummaryList = document.getElementById('weeklySummaryList');
     if (weeklySummaryList) {
         weeklySummaryList.innerHTML = '';
-        Object.keys(weeklyTotals).forEach(weekName => {
-            const val = weeklyTotals[weekName];
-            weeklySummaryList.innerHTML += `
-                <div class="bg-[#121212] border border-gray-800 rounded-xl px-3 py-2.5 flex items-center justify-between text-xs">
-                    <span class="text-gray-300 font-medium">${weekName}</span>
-                    <span class="text-white font-bold">R$ ${val.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                </div>
-            `;
-        });
+        const sortedWeeks = Object.keys(weeklyTotals).sort();
+        
+        if (sortedWeeks.length === 0) {
+            weeklySummaryList.innerHTML = '<p class="text-xs text-gray-500 italic text-center py-2">Nenhum gasto registrado nas semanas.</p>';
+        } else {
+            sortedWeeks.forEach(weekName => {
+                const val = weeklyTotals[weekName];
+                weeklySummaryList.innerHTML += `
+                    <div class="bg-[#121212] border border-gray-800 rounded-xl px-3 py-2.5 flex items-center justify-between text-xs">
+                        <span class="text-gray-300 font-medium">${weekName}</span>
+                        <span class="text-white font-bold">R$ ${val.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                    </div>
+                `;
+            });
+        }
     }
 
     reportsModal.classList.remove('hidden');
@@ -523,7 +537,7 @@ transactionForm.addEventListener('submit', async (e) => {
     if (id) {
         await db.transactions.update(parseInt(id), { name, amount, category, date: baseDateStr, status });
     } else {
-        const recurrenceType = document.querySelector('input[name="recurrenceType"]:checked').value;
+        const recurrenceType = document.querySelector('input[name="recurrenceType"][value="multiple"]').checked ? 'multiple' : 'single';
         
         if (recurrenceType === 'multiple') {
             const totalMonths = parseInt(document.getElementById('installmentsInput').value) || 12;
