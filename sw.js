@@ -1,4 +1,4 @@
-const CACHE_NAME = 'financas-pwa-v1.14';
+const CACHE_NAME = 'financas-pwa-v1.15';
 const assetsToCache = [
     './index.html',
     './style.css',
